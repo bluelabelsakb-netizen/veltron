@@ -40,6 +40,21 @@ const schema = z.object({
   work_order_prefix: f.text(10),
   default_notes: f.longText(),
   invoice_footer: f.longText(),
+  // Fatura görünümü (1 Ekim 2026). ⛔ marka_color SADECE #rrggbb kabul edilir;
+  // aksi halde şablona CSS enjeksiyonu mümkün olurdu.
+  marka_color: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Renk #rrggbb biciminde olmali (orn. #1E3A8A)')
+    .nullish()
+    .transform((v) => v || null),
+  invoice_layout: z
+    .string()
+    .trim()
+    // Sadece dosya adi — yol kacisi (../) engellensin
+    .regex(/^[A-Za-z0-9_\-.]+\.html$/, 'Sadece .html dosya adi (orn. fatura.html)')
+    .nullish()
+    .transform((v) => v || 'fatura.html'),
 });
 
 /** Satiri getirir; yoksa varsayilanlarla olusturur. */

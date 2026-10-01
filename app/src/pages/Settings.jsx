@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Server, RefreshCw, Save, Info, FolderOpen, Shield, Database, Monitor, MonitorSmartphone } from 'lucide-react';
+import {
+  Server, RefreshCw, Save, Info, FolderOpen, Shield, Database, Monitor,
+  MonitorSmartphone, Send, AlertTriangle,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { api, dateFmt, dateTimeFmt } from '../lib/api.js';
+import { api, dateFmt, dateTimeFmt, getServerUrl, getToken } from '../lib/api.js';
 import { PageHeader, Kpi } from '../components/Primitives.jsx';
 import { FormField, useFormState } from '../components/Form.jsx';
 
@@ -21,10 +24,93 @@ export default function Settings() {
   const [remembered, setRemembered] = useState(null);
   const [unutuyor, setUnutuyor] = useState(false);
 
+  // Fatura gorunumu + gonderim (1 Ekim 2026)
+  const [markaRenk, setMarkaRenk] = useState('#1E3A8A');
+  const [markaKaydediyor, setMarkaKaydediyor] = useState(false);
+  const [gonderim, setGonderim] = useState(null);
+  const [testKime, setTestKime] = useState('');
+  const [testGonderiliyor, setTestGonderiliyor] = useState(false);
+  const [onizlemeYapiyor, setOnizlemeYapiyor] = useState(false);
+
   useEffect(() => {
     if (bridge?.app?.info) bridge.app.info().then(setAppInfo).catch(() => {});
     if (bridge?.remember?.get) bridge.remember.get().then(setRemembered).catch(() => {});
   }, []);
+
+  // Gonderim durumu + mevcut marka rengini cek
+  useEffect(() => {
+    let iptal = false;
+    (async () => {
+      try {
+        const [d, c] = await Promise.all([
+          api.get('/invoices/gonderim-durumu').catch(() => null),
+          api.get('/company').catch(() => null),
+        ]);
+        if (iptal) return;
+        if (d?.data) setGonderim(d.data);
+        const profil = c?.data;
+        if (profil?.marka_color) setMarkaRenk(profil.marka_color);
+        if (profil?.email) setTestKime((x) => x || profil.email);
+      } catch { /* ayarlar kapaliysa sorun degil */ }
+    })();
+    return () => { iptal = true; };
+  }, []);
+
+  const markaRenkKaydet = async () => {
+    setMarkaKaydediyor(true);
+    try {
+      // company PATCH/PUT hangisi? Once kontrol et -> PUT kullanilir
+      const mevcut = await api.get('/company');
+      await api.put('/company', { ...mevcut.data, marka_color: markaRenk });
+      toast.success('Fatura marka rengi kaydedildi', markaRenk);
+    } catch (err) {
+      toast.fromError(err, 'Kaydedilemedi');
+    } finally {
+      setMarkaKaydediyor(false);
+    }
+  };
+
+  const faturaOnizle = async () => {
+    setOnizlemeYapiyor(true);
+    try {
+      // Ilk faturayi bul ve PDF indir
+      const liste = await api.get('/invoices', { limit: 1 });
+      const f = liste?.data?.[0];
+      if (!f) {
+        toast.error('Fatura yok', 'Önizleme için önce bir fatura kesin.');
+        return;
+      }
+      const r = await fetch(`${getServerUrl()}/api/invoices/${f.id}/pdf?indir=1`, {
+        headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      });
+      if (!r.ok) throw new Error(`Sunucu ${r.status} döndü`);
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Fatura-onizleme-${f.number}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Önizleme indirildi', 'Masaüstünde açıp bakabilirsiniz.');
+    } catch (err) {
+      toast.fromError(err, 'Önizleme oluşturulamadı');
+    } finally {
+      setOnizlemeYapiyor(false);
+    }
+  };
+
+  const testGonder = async () => {
+    setTestGonderiliyor(true);
+    try {
+      await api.post('/invoices/test-posta', { kime: testKime.trim() });
+      toast.success('Test e-postası gönderildi', testKime);
+      const d = await api.get('/invoices/gonderim-durumu');
+      setGonderim(d.data);
+    } catch (err) {
+      toast.fromError(err, 'Test gönderilemedi');
+    } finally {
+      setTestGonderiliyor(false);
+    }
+  };
 
   const cihazıUnut = async () => {
     setUnutuyor(true);
@@ -199,6 +285,118 @@ export default function Settings() {
             <button className="btn btn-block" style={{ marginTop: 14 }} onClick={logout}>
               Çıkış yap
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ---- Fatura Görünümü + E-posta Gönderimi (1 Ekim 2026) ---- */}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="card-head">
+          <Send size={16} style={{ color: 'var(--success)' }} />
+          <h3>Fatura Görünümü ve E-posta Gönderimi</h3>
+        </div>
+        <div className="card-body">
+          <div className="grid-2" style={{ gap: 20 }}>
+            {/* Sol: marka rengi */}
+            <div>
+              <div className="field">
+                <label className="field-label" htmlFor="marka-renk">
+                  Fatura marka rengi
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    id="marka-renk"
+                    type="color"
+                    value={markaRenk}
+                    onChange={(e) => setMarkaRenk(e.target.value)}
+                    style={{
+                      width: 52, height: 34, padding: 2, borderRadius: 6,
+                      border: '1px solid var(--border)', background: 'var(--bg-input)', cursor: 'pointer',
+                    }}
+                  />
+                  <input
+                    className="input mono"
+                    value={markaRenk}
+                    onChange={(e) => setMarkaRenk(e.target.value)}
+                    placeholder="#1E3A8A"
+                    style={{ maxWidth: 130 }}
+                  />
+                  <button
+                    className="btn btn-sm"
+                    onClick={markaRenkKaydet}
+                    disabled={markaKaydediyor}
+                  >
+                    {markaKaydediyor ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+                </div>
+                <div className="field-hint">
+                  Fatura kâğıdında başlık, tablo başlığı ve toplam çizgisi bu rengi kullanır.
+                  Yerleşim <span className="mono">server/templates/fatura.html</span> dosyasındadır —
+                  tasarımı kod bilmeden değiştirebilirsiniz.
+                </div>
+              </div>
+
+              <button className="btn" onClick={faturaOnizle} disabled={onizlemeYapiyor}>
+                {onizlemeYapiyor ? 'Hazırlanıyor...' : 'Fatura önizleme indir (PDF)'}
+              </button>
+            </div>
+
+            {/* Sağ: gönderim durumu */}
+            <div>
+              <div className="field-label" style={{ marginBottom: 8 }}>E-posta gönderimi</div>
+
+              {gonderim === null ? (
+                <div className="field-hint">Yükleniyor...</div>
+              ) : gonderim.aktif ? (
+                <>
+                  <div
+                    className="alert success"
+                    style={{ marginBottom: 12 }}
+                  >
+                    <strong>Hazır.</strong> Bugün {gonderim.gonderilenBugun} fatura gönderildi,
+                    kalan kota <strong>{gonderim.kalan}</strong> / {gonderim.kota}.
+                  </div>
+                  <div className="field">
+                    <label className="field-label" htmlFor="test-kime">Test gönderimi</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        id="test-kime"
+                        className="input"
+                        type="email"
+                        value={testKime}
+                        onChange={(e) => setTestKime(e.target.value)}
+                        placeholder="kendi adresiniz"
+                        spellCheck={false}
+                      />
+                      <button
+                        className="btn"
+                        onClick={testGonder}
+                        disabled={!testKime.trim() || testGonderiliyor}
+                      >
+                        {testGonderiliyor ? 'Gönderiliyor...' : 'Test Et'}
+                      </button>
+                    </div>
+                    <div className="field-hint">
+                      Kendinize bir test e-postası gönderir. Fatura gönderimi de aynı hesaptan yapılır
+                      (Ayarlar &gt; Firma Profili &gt; e-posta alanı).
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="alert warning">
+                  <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <strong>Kapalı.</strong>
+                    <div style={{ marginTop: 2 }}>{gonderim.sebep}</div>
+                    <div style={{ marginTop: 6 }}>
+                      PDF indirme çalışıyor; sadece e-posta gönderimi kapalı.
+                      Adresi Firma Profili'ne yazın, yetki bilgisi
+                      <span className="mono"> server/.env</span> dosyasına girer.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

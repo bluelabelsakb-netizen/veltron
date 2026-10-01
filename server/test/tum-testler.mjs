@@ -34,6 +34,7 @@ const DOSYALAR = [
   'passwordReset.test.mjs',
   'taxes.test.mjs',
   'remember.test.mjs',
+  'faturaPosta.test.mjs',
 ];
 
 // Bu koşucunun kendisi sunucu testi içermez; grafik testleri uygulama tarafında.

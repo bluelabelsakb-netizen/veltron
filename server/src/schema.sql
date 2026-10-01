@@ -326,6 +326,12 @@ CREATE TABLE IF NOT EXISTS company_profile (
   work_order_prefix TEXT    NOT NULL DEFAULT 'IEM',
   default_notes     TEXT,
   invoice_footer    TEXT,
+  -- Fatura kâğıdı görünümü (1 Ekim 2026)
+  -- marka_color : vurgu rengi (#rrggbb). Bos = varsayılan lacivert.
+  -- invoice_layout : kullanılacak şablon dosyası (fatura.html vb.)
+  -- YERLEŞİM fatura.html dosyasındadır; tasarım değişikliği kod yazmadan yapılır.
+  marka_color       TEXT,
+  invoice_layout    TEXT    NOT NULL DEFAULT 'fatura.html',
   updated_at        TEXT
 );
 
@@ -438,6 +444,33 @@ CREATE TABLE IF NOT EXISTS remember_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_remember_user ON remember_tokens(user_id);
+
+-- GONDERILEN FATURA E-POSTALARI (1 Ekim 2026)
+-- ==============================================
+-- "Faturayi e-posta ile gonder" tikildiginde buraya yazilir.
+-- GONDERIM GECMISI: kim, ne zaman, hangi faturayi, basarili mi.
+-- Fatura silinse bile kayit kalir (invoice_id NULL olur) — denetim izi.
+--
+-- ⛔ GOVDE VE EKLER BURAYA YAZILMAZ (belge gizliligi + yer tasarrufu).
+-- Sadece kim/konu/durum/hata bilgisi tutulur.
+CREATE TABLE IF NOT EXISTS invoice_emails (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id      INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
+  invoice_number  TEXT,                           -- kopya: fatura silinse de kalir
+  recipient       TEXT    NOT NULL,               -- kime gonderildi
+  recipient_name  TEXT,
+  subject         TEXT    NOT NULL,
+  status          TEXT    NOT NULL DEFAULT 'sent', -- sent | failed
+  error           TEXT,                           -- hata mesaji (basarisizsa)
+  size_bytes      INTEGER,                        -- PDF boyutu
+  has_attachment  INTEGER NOT NULL DEFAULT 1,
+  user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL, -- gonderen
+  created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Gunluk kota takibi icin: bugun gonderilenleri hizli sayabilmek
+CREATE INDEX IF NOT EXISTS idx_invoice_emails_created ON invoice_emails(created_at);
+CREATE INDEX IF NOT EXISTS idx_invoice_emails_invoice ON invoice_emails(invoice_id);
 
 -- Musterilerin islerinin durum degisikligi. Portalde "ilerleme" olarak gosterilir.
 -- Mali bilgi (fiyat, tutar, maliyet) BURAYA YAZILMAZ.

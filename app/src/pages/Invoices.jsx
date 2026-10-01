@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Receipt, Plus, Search, Trash2, Pencil, RotateCcw, X, Wallet, Banknote,
-  AlertTriangle, CreditCard, FileText, TrendingUp, Trash, Printer, ArrowLeft,
+  AlertTriangle, CreditCard, FileText, TrendingUp, Trash, Printer, ArrowLeft, Send,
 } from 'lucide-react';
 import {
   api, money, percent, dateFmt, dateTimeFmt, dueLabel, todayIso,
+  getServerUrl, getToken,
   INVOICE_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS,
 } from '../lib/api.js';
 import { useLookups } from '../context/LookupsContext.jsx';
@@ -19,6 +20,7 @@ import { DocumentSheet } from '../components/DocumentSheet.jsx';
 import { FormField, useFormState } from '../components/Form.jsx';
 import { PageHeader, Kpi, KpiMoney, EmptyState } from '../components/Primitives.jsx';
 import { MiniTable } from '../components/DataTable.jsx';
+import { InvoiceSendModal } from '../components/InvoiceSendModal.jsx';
 
 const METHOD_ICONS = { nakit: Banknote, havale: Wallet, kredi_karti: CreditCard, cek: FileText, baska: Wallet };
 const METHOD_LABELS = Object.fromEntries(PAYMENT_METHOD_OPTIONS.map((o) => [o.value, o.label]));
@@ -522,6 +524,30 @@ function InvoiceDetail({ invoiceId, productOptions, onClose, onEdit, onChanged }
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [printMode, setPrintMode] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  /** PDF'i indir (e-posta gondermeden). */
+  const pdfIndir = useCallback(async () => {
+    try {
+      // PDF icin fetch: api.raw JSON'a cevirmeye calisir ve bozulur
+      const r = await fetch(`${getServerUrl()}/api/invoices/${invoiceId}/pdf?indir=1`, {
+        headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      });
+      if (!r.ok) {
+        const veri = await r.json().catch(() => null);
+        throw new Error(veri?.error || `Sunucu ${r.status} döndü`);
+      }
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Fatura-${invoice?.number || invoiceId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF indirildi');
+    } catch (err) {
+      toast.fromError(err, 'PDF oluşturulamadı');
+    }
+  }, [invoiceId, invoice?.number, toast]);
 
   const load = useCallback(async () => {
     try {
@@ -569,6 +595,18 @@ function InvoiceDetail({ invoiceId, productOptions, onClose, onEdit, onChanged }
                 </button>
               ) : null}
               <div className="spacer" />
+              <button className="btn" onClick={pdfIndir} title="PDF olarak indir">
+                <FileText size={14} />
+                PDF
+              </button>
+              <button
+                className="btn"
+                onClick={() => setSending(true)}
+                title="E-posta ile gönder"
+              >
+                <Send size={14} />
+                Gönder
+              </button>
               <button className="btn" onClick={() => setPrintMode(true)}>
                 <Printer size={14} />
                 Yazdır
@@ -730,6 +768,10 @@ function InvoiceDetail({ invoiceId, productOptions, onClose, onEdit, onChanged }
             onChanged();
           }}
         />
+      ) : null}
+
+      {sending && invoice ? (
+        <InvoiceSendModal invoice={invoice} onClose={() => setSending(false)} />
       ) : null}
     </>
   );

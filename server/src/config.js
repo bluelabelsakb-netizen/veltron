@@ -28,6 +28,17 @@ export const config = {
     password: process.env.ADMIN_PASSWORD || 'veltron123',
     fullName: process.env.ADMIN_NAME || 'Sistem Yöneticisi',
   },
+  // Fatura e-postasi (1 Ekim 2026).
+  // ⛔ YETKI BILGISI SADECE .env'DEN GELIR; git'a girmez. Kullaniciya
+  // gosterilen tek bilgi gonderici adresidir (Ayarlar > Gonderim durumu).
+  mail: {
+    gonderici: process.env.MAIL_FROM || '',
+    gondericiAdi: process.env.MAIL_FROM_NAME || 'Veltron',
+    uygulamaSifresi: process.env.MAIL_APP_PASSWORD || '',
+    clientId: process.env.MAIL_CLIENT_ID || '',
+    clientSecret: process.env.MAIL_CLIENT_SECRET || '',
+    refreshToken: process.env.MAIL_REFRESH_TOKEN || '',
+  },
 };
 
 if (config.jwtSecret.startsWith('veltron-gelistirme')) {

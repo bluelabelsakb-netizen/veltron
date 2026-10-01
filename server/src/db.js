@@ -57,6 +57,11 @@ export function migrate() {
   // VERGI: rejim ve beyanneme donemi ayarlardan gelir (sirket/sahis uyumu).
   ensureColumn('company_profile', 'tax_regime', "TEXT NOT NULL DEFAULT 'sirket'");
   ensureColumn('company_profile', 'tax_period', "TEXT NOT NULL DEFAULT 'ceyreklik'");
+  // FATURA GORUNUMU (1 Ekim 2026). schema.sql'deki CREATE TABLE IF NOT EXISTS
+  // calisan tabloyu DEGISTIRMEZ (AGENTS.md tuzak 2) — o yuzden ayrica
+  // ensureColumn gerekir. marka_color bos = fatura.html varsayilan rengi.
+  ensureColumn('company_profile', 'marka_color', 'TEXT');
+  ensureColumn('company_profile', 'invoice_layout', "TEXT NOT NULL DEFAULT 'fatura.html'");
 
   // --- DOVIZ (coklu para birimi) ---
   // Tutar alanlari KAYIT para biriminde kalir; rate_to_try ile TL karsiligi

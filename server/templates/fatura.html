@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>{{FATURA_NO}} — Fatura</title>
+<!--
+  FATURA ŞABLONU — TASARIMI BURADAN DEĞİŞTİRİRSİN
+  =====================================================
+
+  Bu dosya düz metindir. Kod bilmeden, herhangi bir metin editöründe
+  (Not Defteri, VS Code, Notepad++) açıp düzenleyebilirsin. Kaydetmen yeterli.
+
+  {{...}} İÇİNDEKİ YER tutucular — bunlara dokunma, sistem dolduruyor:
+    {{MARKA_RENK}}     marka rengi (Firma Profili > Fatura Görünümü)
+    {{LOGO_HTML}}      logo resmi (yoksa boş gelir)
+    {{FATURA_NO}}      fatura numarası
+    {{FIRMA_ADI}}      firma unvanı
+    ... (tamamı aşağıda listeli)
+
+  DEĞİŞTİREBİLECEKLERİN:
+    - Renkler        : CSS değişkenleri (--marka, --zemin, --cizgi...)
+    - Logo boyutu    : .logo bloğundaki width
+    - Yazı tipi      : font-family satırı
+    - Boşluklar      : padding değerleri
+    - Sıralama       : HTML bloklarını yer değiştirerek
+
+  ⚠️ DİKKAT:
+    - Yazı tipi SADECE standart sistem fontlarını kullan (Arial, Helvetica,
+      Times New Roman, Georgia). Başka yazı tipi PDF'e GİRMEZ.
+    - A4 dikey kağıt: @page kuralı sabit. Kenar boşluğu @page içinde.
+    - Kalem tablosu {{KALEMLER}} ile gelir; satır içi CSS'i
+      .kalem-satir / .satisir satir sınıflarını düzenle.
+-->
+<style>
+  :root {
+    --marka: {{MARKA_RENK}};
+    --zemin: #f4f6fa;
+    --cizgi: #d9dee8;
+    --metin: #1a1f2b;
+    --soluk: #6b7484;
+    --beyaz: #ffffff;
+  }
+
+  @page { size: A4 portrait; margin: 14mm 14mm 16mm; }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--metin);
+    font-size: 10pt;
+    line-height: 1.45;
+  }
+
+  /* ---------- ÜST BAŞLIK ---------- */
+  .ust {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 10px;
+    border-bottom: 2.5px solid var(--marka);
+  }
+  .logo { max-height: 58px; max-width: 190px; margin-bottom: 6px; }
+  .firma-ad { font-size: 16pt; font-weight: bold; color: var(--marka); letter-spacing: -0.3px; }
+  .firma-unvan { font-size: 8.5pt; color: var(--soluk); text-transform: uppercase; letter-spacing: 1.2px; }
+  .baslik-sag { text-align: right; }
+  .fatura-yazi {
+    font-size: 24pt; font-weight: bold; color: var(--marka);
+    letter-spacing: 3px; line-height: 1;
+  }
+  .fatura-no { font-size: 12pt; font-weight: bold; margin-top: 4px; }
+
+  /* ---------- İKİ KOLON: FIRMA / MÜŞTERİ ---------- */
+  .iki-kolon {
+    display: flex; gap: 24px; margin-top: 14px;
+  }
+  .kolon { flex: 1; }
+  .kolon-ort { text-align: right; }
+  .etiket {
+    font-size: 7.5pt; font-weight: bold; color: var(--soluk);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding-bottom: 4px; margin-bottom: 5px;
+    border-bottom: 1px solid var(--cizgi);
+  }
+  .satir-bilgi { font-size: 9pt; }
+  .satir-bilgi .k { color: var(--soluk); }
+
+  /* ---------- TARİH BLOKLARI ---------- */
+  .tarihler {
+    display: flex; gap: 10px; margin-top: 12px;
+  }
+  .tarih-kutu {
+    flex: 1; background: var(--zemin); border-radius: 5px;
+    padding: 7px 10px; text-align: center;
+  }
+  .tarih-kutu .k { font-size: 7.5pt; color: var(--soluk); text-transform: uppercase; letter-spacing: 0.8px; }
+  .tarih-kutu .d { font-size: 11pt; font-weight: bold; margin-top: 2px; }
+
+  /* ---------- KALEM TABLOSU ---------- */
+  table.kalemler {
+    width: 100%; border-collapse: collapse; margin-top: 16px;
+  }
+  .kalemler thead th {
+    background: var(--marka); color: var(--beyaz);
+    font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.7px;
+    padding: 7px 8px; text-align: left;
+  }
+  .kalemler thead th.sag { text-align: right; }
+  .kalemler thead th.orta { text-align: center; }
+  .kalemler tbody td {
+    padding: 6px 8px; border-bottom: 1px solid var(--cizgi); font-size: 9.5pt;
+  }
+  .kalemler tbody td.sag { text-align: right; font-variant-numeric: tabular-nums; }
+  .kalemler tbody td.orta { text-align: center; }
+  .kalemler tbody tr.son td { border-bottom: 2px solid var(--marka); }
+
+  /* ---------- TOPLAMLAR ---------- */
+  .alt-bolum { display: flex; margin-top: 14px; }
+  .notlar { flex: 1; padding-right: 24px; }
+  .toplamlar { width: 240px; }
+  .toplam-satir {
+    display: flex; justify-content: space-between;
+    padding: 4px 0; font-size: 9.5pt;
+  }
+  .toplam-satir.son {
+    border-top: 2px solid var(--marka);
+    margin-top: 5px; padding-top: 7px;
+    font-size: 12pt; font-weight: bold; color: var(--marka);
+  }
+  .not-ust { font-size: 8pt; color: var(--soluk); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .not-metni { font-size: 8.5pt; color: var(--soluk); white-space: pre-line; }
+
+  /* ---------- BANKA / İMZA ---------- */
+  .banka {
+    margin-top: 22px; padding-top: 9px; border-top: 1px solid var(--cizgi);
+    font-size: 8.5pt; color: var(--soluk);
+  }
+  .banka-ust {
+    font-size: 7.5pt; font-weight: bold; color: var(--metin);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;
+  }
+  .iban { font-family: "Courier New", Courier, monospace; letter-spacing: 0.4px; }
+
+  .imza { margin-top: 26px; text-align: right; }
+  .imza-cizgi { width: 190px; border-top: 1px solid var(--metin); margin-left: auto; padding-top: 4px; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+  <!-- ÜST BAŞLIK -->
+  <div class="ust">
+    <div>
+      {{LOGO_HTML}}
+      <div class="firma-ad">{{FIRMA_ADI}}</div>
+      <div class="firma-unvan">{{FIRMA_UNVAN}}</div>
+    </div>
+    <div class="baslik-sag">
+      <div class="fatura-yazi">FATURA</div>
+      <div class="fatura-no">{{FATURA_NO}}</div>
+    </div>
+  </div>
+
+  <!-- FIRMA / MÜŞTERİ -->
+  <div class="iki-kolon">
+    <div class="kolon">
+      <div class="etiket">Fatura Eden</div>
+      <div class="satir-bilgi">{{FIRMA_BILGILERI}}</div>
+    </div>
+    <div class="kolon kolon-ort">
+      <div class="etiket">Fatura Edilen</div>
+      <div class="satir-bilgi">{{MUSTERI_BILGILERI}}</div>
+    </div>
+  </div>
+
+  <!-- TARİHLER -->
+  <div class="tarihler">
+    <div class="tarih-kutu">
+      <div class="k">Fatura Tarihi</div>
+      <div class="d">{{FATURA_TARIHI}}</div>
+    </div>
+    <div class="tarih-kutu">
+      <div class="k">Son Ödeme</div>
+      <div class="d">{{SON_ODEME}}</div>
+    </div>
+    <div class="tarih-kutu">
+      <div class="k">Vade</div>
+      <div class="d">{{VADE_GUN}} Gün</div>
+    </div>
+  </div>
+
+  <!-- KALEMLER -->
+  <table class="kalemler">
+    <thead>
+      <tr>
+        <th style="width:44%">Açıklama</th>
+        <th class="sag" style="width:14%">Miktar</th>
+        <th class="orta" style="width:10%">Birim</th>
+        <th class="sag" style="width:16%">Birim Fiyat</th>
+        <th class="sag" style="width:16%">Tutar</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{KALEMLER}}
+    </tbody>
+  </table>
+
+  <!-- NOTLAR + TOPLAMLAR -->
+  <div class="alt-bolum">
+    <div class="notlar">
+      {{NOTLAR_BOLUMU}}
+    </div>
+    <div class="toplamlar">
+      <div class="toplam-satir"><span>Ara Toplam</span><span>{{ARA_TOPLAM}}</span></div>
+      {{INDIRIM_SATIRI}}
+      <div class="toplam-satir"><span>KDV (%{{KDV_ORANI}})</span><span>{{KDV_TUTARI}}</span></div>
+      <div class="toplam-satir son"><span>Genel Toplam</span><span>{{GENEL_TOPLAM}}</span></div>
+    </div>
+  </div>
+
+  <!-- BANKA BİLGİSİ -->
+  {{BANKA_BOLUMU}}
+
+  <!-- İMZA -->
+  <div class="imza">
+    <div class="imza-cizgi">{{IMZA_ADI}}</div>
+  </div>
+
+</body>
+</html>

@@ -15,6 +15,7 @@ import dashboardRoutes from './dashboard.js';
 import activityRoutes from './activity.js';
 import lookupRoutes from './lookups.js';
 import companyRoutes from './company.js';
+import faturaPostaRoutes from './faturaPosta.js';
 import workOrderRoutes from './workOrders.js';
 import subcontractorRoutes from './subcontractors.js';
 import payrollRoutes from './payroll.js';
@@ -80,6 +81,11 @@ router.use('/employees', employeeRoutes);
 router.use('/projects', projectRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/quotes', quoteRoutes);
+// ⚠️ SIRA KRİTİK: faturaPostaRoutes ÖNCE kaydedilir.
+// invoices.js içinde `GET /:id` var; o rota "/gonderim-durumu" gibi sabit
+// yolları da yakalar ve "id=NaN" arar -> "Fatura bulunamadi" hatası.
+// Express ilk eşleşen rotayı çalıştırdığı için bizim dosyamız önce gelmeli.
+router.use('/invoices', faturaPostaRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/products', productRoutes);
 router.use('/stock', stockRoutes);
@@ -87,6 +93,8 @@ router.use('/users', userRoutes);
 router.use('/activity', activityRoutes);
 router.use('/lookups', lookupRoutes);
 router.use('/company', companyRoutes);
+// Not: faturaPosta (PDF + e-posta) yukarıda kayıtlı. PDF gorunumu
+// server/templates/fatura.html dosyasındadır — tasarım için koda dokunulmaz.
 router.use('/work-orders', workOrderRoutes);
 router.use('/subcontractors', subcontractorRoutes);
 router.use('/payroll', payrollRoutes);
