@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   TrendingUp, TrendingDown, Briefcase, Wallet, PiggyBank, Percent,
   RotateCcw, AlertTriangle, Crown, Award, ArrowUpRight, Info, FileText, HardHat,
@@ -7,7 +7,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
-import { api, money, moneyTam, moneyShort, number, percent, dateFmt, toCsv } from '../lib/api.js';
+import { api, money, moneyKart, moneyShort, number, percent, dateFmt, toCsv } from '../lib/api.js';
 import { guzelEksen, guzelAdim, eksenTickleri } from '../lib/chartScale.js';
 import { useToast } from '../components/Toast.jsx';
 import { PageHeader, Kpi, KpiMoney, EmptyState, Tip } from '../components/Primitives.jsx';
@@ -43,7 +43,7 @@ export default function Profit() {
       });
       setData(res.data);
     } catch (err) {
-      toast.fromError(err, 'Rapor yüklenemedi');
+      toast.fromError(err, 'Rapor yÃ¼klenemedi');
     } finally {
       setLoading(false);
     }
@@ -60,25 +60,25 @@ export default function Profit() {
     const rows = data?.work_orders || [];
     const csv = toCsv(
       [
-        { key: 'number', header: 'İş Emri No' },
+        { key: 'number', header: 'Ä°ÅŸ Emri No' },
         { key: 'work_date', header: 'Tarih' },
-        { key: 'customer_name', header: 'Müşteri' },
+        { key: 'customer_name', header: 'MÃ¼ÅŸteri' },
         { key: 'net_weight', header: 'Net (ton)' },
-        { key: 'revenue', header: 'Satış (TL)' },
-        { key: 'cost', header: 'Taşeron (TL)' },
-        { key: 'profit', header: 'Kâr (TL)' },
+        { key: 'revenue', header: 'SatÄ±ÅŸ (TL)' },
+        { key: 'cost', header: 'TaÅŸeron (TL)' },
+        { key: 'profit', header: 'KÃ¢r (TL)' },
         { key: 'margin', header: 'Marj (%)' },
       ],
       rows
     );
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['ï»¿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `veltron-kar-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('CSV indirildi', `${rows.length} iş emri dışa aktarıldı.`);
+    toast.success('CSV indirildi', `${rows.length} iÅŸ emri dÄ±ÅŸa aktarÄ±ldÄ±.`);
   };
 
   const chartData = useMemo(() => {
@@ -133,7 +133,7 @@ export default function Profit() {
     try {
       localStorage.setItem('veltron.karEkseni', JSON.stringify(kayit));
     } catch {
-      /* depolama kapalı olabilir */
+      /* depolama kapalÄ± olabilir */
     }
   };
 
@@ -149,8 +149,8 @@ export default function Profit() {
   return (
     <>
       <PageHeader
-        title="Kâr Raporu"
-        description="İş emri satışlarından taşeron maliyeti düşülerek"
+        title="KÃ¢r Raporu"
+        description="Ä°ÅŸ emri satÄ±ÅŸlarÄ±ndan taÅŸeron maliyeti dÃ¼ÅŸÃ¼lerek"
         actions={
           <button className="btn" onClick={load} disabled={loading}>
             <RotateCcw size={14} className={loading ? 'spin' : undefined} />
@@ -163,7 +163,7 @@ export default function Profit() {
       <div className="card mb-14">
         <div className="row row-wrap" style={{ gap: 9 }}>
           <span className="text-dim text-sm" style={{ marginRight: 2 }}>
-            Tarih aralığı:
+            Tarih aralÄ±ÄŸÄ±:
           </span>
           <input
             type="date"
@@ -172,7 +172,7 @@ export default function Profit() {
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
           />
-          <span className="text-dim">–</span>
+          <span className="text-dim">â€“</span>
           <input
             type="date"
             className="input"
@@ -186,7 +186,7 @@ export default function Profit() {
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
           >
-            <option value="">Tüm müşteriler</option>
+            <option value="">TÃ¼m mÃ¼ÅŸteriler</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.company || c.contact || `#${c.id}`}
@@ -209,46 +209,46 @@ export default function Profit() {
         </div>
       </div>
 
-      {/* Ana göstergeler */}
+      {/* Ana gÃ¶stergeler */}
       <div className="kpi-grid">
-        <KpiMoney label="Toplam satış" value={s?.revenue} color="#3b82f6" icon={TrendingUp} small />
+        <KpiMoney label="Toplam satÄ±ÅŸ" value={s?.revenue} color="#3b82f6" icon={TrendingUp} small />
         <KpiMoney
-          label="Taşeron maliyeti"
+          label="TaÅŸeron maliyeti"
           value={s?.cost}
           color="#ef4444"
           icon={HardHat}
-          sub={`${s?.with_subcontractor || 0} işte taşeron`}
+          sub={`${s?.with_subcontractor || 0} iÅŸte taÅŸeron`}
           small
         />
         <KpiMoney
-          label="Kâr"
+          label="KÃ¢r"
           value={s?.profit}
           color={s?.profit >= 0 ? '#22c55e' : '#ef4444'}
           icon={Award}
-          sub={`${s?.delivered_count || 0} iş teslim edildi`}
+          sub={`${s?.delivered_count || 0} iÅŸ teslim edildi`}
           small
         />
-        <Kpi label="Marj" value={percent(s?.margin)} color="#a855f7" icon={Percent} sub="kâr / satış" small />
+        <Kpi label="Marj" value={percent(s?.margin)} color="#a855f7" icon={Percent} sub="kÃ¢r / satÄ±ÅŸ" small />
         <Kpi
-          label="İş emri"
+          label="Ä°ÅŸ emri"
           value={number(s?.work_order_count)}
           color="#06b6d4"
           icon={Briefcase}
-          sub={`ort. ${moneyTam(s?.avg_profit)} kâr`}
+          sub={`ort. ${moneyKart(s?.avg_profit)} kÃ¢r`}
           small
         />
         <Kpi label="Toplam net" value={`${number(s?.net_weight)} ton`} color="#f59e0b" icon={PiggyBank} small />
       </div>
 
-      {/* Önemli uyarı */}
+      {/* Ã–nemli uyarÄ± */}
       <div className="alert info mb-14">
         <Info size={16} style={{ flexShrink: 0, marginTop: 1 }} />
         <span>
-          <strong>Bu rakam gerçek net kâr değildir.</strong> İş emri satışından yalnızca
-          <strong> taşeron maliyeti</strong> düşülür. Kendi personel emeğiniz, malzeme alımı,
-          araç gideri ve genel giderler hesaba katılmaz — yani <em>katkı marjıdır</em>.
-          Tam maliyet takibi için <em>Malzeme</em> ve <em>Stok Hareketleri</em> ekranlarındaki
-          giderlerin de iş emrine bağlanması gerekir.
+          <strong>Bu rakam gerÃ§ek net kÃ¢r deÄŸildir.</strong> Ä°ÅŸ emri satÄ±ÅŸÄ±ndan yalnÄ±zca
+          <strong> taÅŸeron maliyeti</strong> dÃ¼ÅŸÃ¼lÃ¼r. Kendi personel emeÄŸiniz, malzeme alÄ±mÄ±,
+          araÃ§ gideri ve genel giderler hesaba katÄ±lmaz â€” yani <em>katkÄ± marjÄ±dÄ±r</em>.
+          Tam maliyet takibi iÃ§in <em>Malzeme</em> ve <em>Stok Hareketleri</em> ekranlarÄ±ndaki
+          giderlerin de iÅŸ emrine baÄŸlanmasÄ± gerekir.
         </span>
       </div>
 
@@ -256,22 +256,22 @@ export default function Profit() {
         <div className="card">
           <EmptyState
             icon={Briefcase}
-            title={hasFilter ? 'Bu filtrede iş emri yok' : 'Henüz iş emri yok'}
+            title={hasFilter ? 'Bu filtrede iÅŸ emri yok' : 'HenÃ¼z iÅŸ emri yok'}
             description={
               hasFilter
-                ? 'Tarih aralığını genişletin veya farklı bir müşteri seçin.'
-                : 'İş emri eklediğinizde kâr raporu burada görünecek.'
+                ? 'Tarih aralÄ±ÄŸÄ±nÄ± geniÅŸletin veya farklÄ± bir mÃ¼ÅŸteri seÃ§in.'
+                : 'Ä°ÅŸ emri eklediÄŸinizde kÃ¢r raporu burada gÃ¶rÃ¼necek.'
             }
           />
         </div>
       ) : (
         <>
-          {/* Aylık grafik + tahsilat uyarısı */}
+          {/* AylÄ±k grafik + tahsilat uyarÄ±sÄ± */}
           <div className="grid-2-1 mb-14">
             <div className="card">
               <div className="card-head">
-                <h3>Aylık Kâr</h3>
-                <span className="text-dim text-sm">satış − taşeron</span>
+                <h3>AylÄ±k KÃ¢r</h3>
+                <span className="text-dim text-sm">satÄ±ÅŸ âˆ’ taÅŸeron</span>
                 <div className="spacer" />
                 <button
                   className="btn btn-sm"
@@ -279,7 +279,7 @@ export default function Profit() {
                     setEksenGoster((v) => !v);
                     setEksenGirdi({ min: aktifEksen.min, max: aktifEksen.max });
                   }}
-                  title="Eksen sınırlarını elle ayarla"
+                  title="Eksen sÄ±nÄ±rlarÄ±nÄ± elle ayarla"
                 >
                   <SlidersHorizontal size={13} />
                   Eksen
@@ -289,7 +289,7 @@ export default function Profit() {
                 {eksenGoster ? (
                   <div className="eksen-ayar mb-14">
                     <label className="eksen-alan">
-                      Alt sınır
+                      Alt sÄ±nÄ±r
                       <input
                         type="number"
                         className="input"
@@ -298,7 +298,7 @@ export default function Profit() {
                       />
                     </label>
                     <label className="eksen-alan">
-                      Üst sınır
+                      Ãœst sÄ±nÄ±r
                       <input
                         type="number"
                         className="input"
@@ -321,13 +321,13 @@ export default function Profit() {
                       disabled={!eksenSabit?.max}
                     >
                       <RotateCcw size={12} />
-                      Veriye göre
+                      Veriye gÃ¶re
                     </button>
                     <div className="spacer" />
                     <span className="text-dim text-sm">
                       {eksenSabit?.max
-                        ? `Elle sabitlendi (${number(aktifEksen.min)} … ${number(aktifEksen.max)})`
-                        : 'Şu an veriye göre otomatik ayarlanıyor'}
+                        ? `Elle sabitlendi (${number(aktifEksen.min)} â€¦ ${number(aktifEksen.max)})`
+                        : 'Åu an veriye gÃ¶re otomatik ayarlanÄ±yor'}
                     </span>
                   </div>
                 ) : null}
@@ -337,10 +337,10 @@ export default function Profit() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#263041" vertical={false} />
                       <XAxis dataKey="label" tick={{ fill: '#6b788d', fontSize: 11 }} axisLine={false} tickLine={false} />
                       {/*
-                        Eksen veriden hesaplanir (reaktif): negatif kâr varsa
-                        alt sınır 0'ın ALTINA iner, böylece çubuklar
-                        çerçeveyi AŞMAZ. Recharts varsayılanı ([0,'auto'])
-                        negatif çubukları kırpıyordu.
+                        Eksen veriden hesaplanir (reaktif): negatif kÃ¢r varsa
+                        alt sÄ±nÄ±r 0'Ä±n ALTINA iner, bÃ¶ylece Ã§ubuklar
+                        Ã§erÃ§eveyi AÅMAZ. Recharts varsayÄ±lanÄ± ([0,'auto'])
+                        negatif Ã§ubuklarÄ± kÄ±rpÄ±yordu.
                       */}
                       <YAxis
                         domain={[aktifEksen.min, aktifEksen.max]}
@@ -356,7 +356,7 @@ export default function Profit() {
                       ) : null}
                       <Tooltip
                         contentStyle={tooltipStyle}
-                        formatter={(v, n) => [money(v), n === 'revenue' ? 'Satış' : n === 'cost' ? 'Taşeron' : 'Kâr']}
+                        formatter={(v, n) => [money(v), n === 'revenue' ? 'SatÄ±ÅŸ' : n === 'cost' ? 'TaÅŸeron' : 'KÃ¢r']}
                       />
                       <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={44} />
                       <Bar dataKey="cost" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={20} />
@@ -365,9 +365,9 @@ export default function Profit() {
                   </ResponsiveContainer>
                 </div>
                 <div className="chart-legend">
-                  <span className="key"><span className="swatch" style={{ background: '#3b82f6' }} /> Satış</span>
-                  <span className="key"><span className="swatch" style={{ background: '#ef4444' }} /> Taşeron maliyeti</span>
-                  <span className="key"><span className="swatch" style={{ background: '#22c55e' }} /> Kâr</span>
+                  <span className="key"><span className="swatch" style={{ background: '#3b82f6' }} /> SatÄ±ÅŸ</span>
+                  <span className="key"><span className="swatch" style={{ background: '#ef4444' }} /> TaÅŸeron maliyeti</span>
+                  <span className="key"><span className="swatch" style={{ background: '#22c55e' }} /> KÃ¢r</span>
                 </div>
               </div>
             </div>
@@ -384,13 +384,13 @@ export default function Profit() {
                 {data?.collection.uninvoiced_count ? (
                   <>
                     <div className="stat-row">
-                      <span className="label">Teslim ama faturası yok</span>
+                      <span className="label">Teslim ama faturasÄ± yok</span>
                       <span className="value money" style={{ color: '#fbbf24' }}>
                         {money(data.collection.uninvoiced_amount)}
                       </span>
                     </div>
                     <div className="stat-row">
-                      <span className="label">İş emri sayısı</span>
+                      <span className="label">Ä°ÅŸ emri sayÄ±sÄ±</span>
                       <span className="value">{data.collection.uninvoiced_count}</span>
                     </div>
                     <div style={{ marginTop: 12 }}>
@@ -399,7 +399,7 @@ export default function Profit() {
                           <div className="grow">
                             <div className="title mono">{r.number}</div>
                             <div className="meta">
-                              {r.customer_name} · {dateFmt(r.work_date)}
+                              {r.customer_name} Â· {dateFmt(r.work_date)}
                             </div>
                           </div>
                           <span className="money" style={{ color: '#fbbf24' }}>
@@ -410,17 +410,17 @@ export default function Profit() {
                     </div>
                   </>
                 ) : (
-                  <EmptyState compact title="Hesap kapatılmamış iş yok" description="Teslim edilen tüm işlerin faturası kesilmiş." />
+                  <EmptyState compact title="Hesap kapatÄ±lmamÄ±ÅŸ iÅŸ yok" description="Teslim edilen tÃ¼m iÅŸlerin faturasÄ± kesilmiÅŸ." />
                 )}
               </div>
             </div>
           </div>
 
           <div className="grid-2 mb-14">
-            {/* Müşteri kırılımı */}
+            {/* MÃ¼ÅŸteri kÄ±rÄ±lÄ±mÄ± */}
             <div className="card">
               <div className="card-head">
-                <h3>Müşteri Bazında</h3>
+                <h3>MÃ¼ÅŸteri BazÄ±nda</h3>
               </div>
               <div className="card-body">
                 {!data?.by_customer?.length ? (
@@ -455,15 +455,15 @@ export default function Profit() {
               </div>
             </div>
 
-            {/* Taşeron kırılımı */}
+            {/* TaÅŸeron kÄ±rÄ±lÄ±mÄ± */}
             <div className="card">
               <div className="card-head">
                 <HardHat size={15} style={{ color: 'var(--warning)' }} />
-                <h3>Taşeron Maliyetleri</h3>
+                <h3>TaÅŸeron Maliyetleri</h3>
               </div>
               <div className="card-body">
                 {!data?.by_subcontractor?.length ? (
-                  <EmptyState compact title="Taşeron maliyeti yok" description="İş emirlerine taşeron atadıkça burada görünür." />
+                  <EmptyState compact title="TaÅŸeron maliyeti yok" description="Ä°ÅŸ emirlerine taÅŸeron atadÄ±kÃ§a burada gÃ¶rÃ¼nÃ¼r." />
                 ) : (
                   <>
                     {data.by_subcontractor.map((t, i) => {
@@ -489,8 +489,8 @@ export default function Profit() {
                       );
                     })}
                     <div className="stat-row total" style={{ marginTop: 10 }}>
-                      <span className="label">Toplam taşeron maliyeti</span>
-                      <span className="value money neg">−{money(data.by_subcontractor.reduce((x, t) => x + t.cost, 0))}</span>
+                      <span className="label">Toplam taÅŸeron maliyeti</span>
+                      <span className="value money neg">âˆ’{money(data.by_subcontractor.reduce((x, t) => x + t.cost, 0))}</span>
                     </div>
                   </>
                 )}
@@ -498,21 +498,21 @@ export default function Profit() {
             </div>
           </div>
 
-          {/* Aylık tablo */}
+          {/* AylÄ±k tablo */}
           {data?.by_month?.length > 1 ? (
             <div className="card mb-14">
               <div className="card-head">
-                <h3>Aylık Karşılaştırma</h3>
+                <h3>AylÄ±k KarÅŸÄ±laÅŸtÄ±rma</h3>
               </div>
               <div className="table-scroll">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Dönem</th>
-                      <th style={{ width: 76, textAlign: 'right' }}>İş</th>
-                      <th style={{ width: 128, textAlign: 'right' }}>Satış</th>
-                      <th style={{ width: 128, textAlign: 'right' }}>Taşeron</th>
-                      <th style={{ width: 128, textAlign: 'right' }}>Kâr</th>
+                      <th>DÃ¶nem</th>
+                      <th style={{ width: 76, textAlign: 'right' }}>Ä°ÅŸ</th>
+                      <th style={{ width: 128, textAlign: 'right' }}>SatÄ±ÅŸ</th>
+                      <th style={{ width: 128, textAlign: 'right' }}>TaÅŸeron</th>
+                      <th style={{ width: 128, textAlign: 'right' }}>KÃ¢r</th>
                       <th style={{ width: 88, textAlign: 'right' }}>Marj</th>
                     </tr>
                   </thead>
@@ -524,7 +524,7 @@ export default function Profit() {
                         </td>
                         <td className="col-num cell-muted">{m.count}</td>
                         <td className="col-num money">{money(m.revenue)}</td>
-                        <td className="col-num money neg">−{money(m.cost)}</td>
+                        <td className="col-num money neg">âˆ’{money(m.cost)}</td>
                         <td className="col-num">
                           <span className={`money ${m.profit >= 0 ? 'pos' : 'neg'}`}>{money(m.profit)}</span>
                         </td>
@@ -541,22 +541,22 @@ export default function Profit() {
             </div>
           ) : null}
 
-          {/* İş emri listesi */}
+          {/* Ä°ÅŸ emri listesi */}
           <DataTable
             columns={[
               {
                 key: 'number',
-                header: 'İş Emri',
+                header: 'Ä°ÅŸ Emri',
                 render: (r) => (
                   <div>
                     <div className="cell-strong mono">{r.number}</div>
                     <div className="cell-dim truncate" style={{ maxWidth: 200 }}>
-                      {r.subject || '—'}
+                      {r.subject || 'â€”'}
                     </div>
                   </div>
                 ),
               },
-              { key: 'customer_name', header: 'Müşteri' },
+              { key: 'customer_name', header: 'MÃ¼ÅŸteri' },
               { key: 'work_date', header: 'Tarih', width: 104, render: (r) => dateFmt(r.work_date) },
               {
                 key: 'net_weight',
@@ -565,18 +565,18 @@ export default function Profit() {
                 width: 106,
                 render: (r) => <span className="cell-muted">{number(r.net_weight)} {r.unit}</span>,
               },
-              { key: 'revenue', header: 'Satış', align: 'right', width: 118, render: (r) => <span className="money">{money(r.revenue)}</span> },
+              { key: 'revenue', header: 'SatÄ±ÅŸ', align: 'right', width: 118, render: (r) => <span className="money">{money(r.revenue)}</span> },
               {
                 key: 'cost',
-                header: 'Taşeron',
+                header: 'TaÅŸeron',
                 align: 'right',
                 width: 108,
                 render: (r) =>
-                  r.cost > 0 ? <span className="money neg">−{money(r.cost)}</span> : <span className="text-dim">—</span>,
+                  r.cost > 0 ? <span className="money neg">âˆ’{money(r.cost)}</span> : <span className="text-dim">â€”</span>,
               },
               {
                 key: 'profit',
-                header: 'Kâr',
+                header: 'KÃ¢r',
                 align: 'right',
                 width: 122,
                 render: (r) => (
@@ -602,7 +602,7 @@ export default function Profit() {
                 width: 112,
                 render: (r) => (
                   <span className={`badge ${r.status === 'teslim_edildi' ? 'success' : r.status === 'ertelendi' ? 'danger' : 'info'}`}>
-                    {r.status === 'teslim_edildi' ? 'Teslim' : r.status === 'hazirlaniyor' ? 'Hazırlanıyor' : r.status === 'ertelendi' ? 'Ertelendi' : 'Alındı'}
+                    {r.status === 'teslim_edildi' ? 'Teslim' : r.status === 'hazirlaniyor' ? 'HazÄ±rlanÄ±yor' : r.status === 'ertelendi' ? 'Ertelendi' : 'AlÄ±ndÄ±'}
                   </span>
                 ),
               },

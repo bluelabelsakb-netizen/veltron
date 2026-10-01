@@ -8,7 +8,7 @@
  *
  * Kural: Turkce para biriminde ISARET sonda olur, basta degil.
  */
-import { money, moneyOkunur, moneyShort } from '../app/src/lib/api.js';
+import { money, moneyOkunur, moneyShort, moneyTam, moneyKart } from '../app/src/lib/api.js';
 
 let gecti = 0;
 let kaldi = 0;
@@ -91,6 +91,33 @@ esit('para birimi daima sonda', moneyOkunur(65400).endsWith('₺'), true);
 esit('negatifte birim kaymaz', moneyOkunur(-65400).endsWith('₺'), true);
 esit('ondalik ayraci nokta degil', moneyOkunur(9999).includes('.'), true);
 esit('ondalik ayraci virgul', moneyOkunur(9999).includes(','), true);
+
+// ------------------------------------------------------ moneyTam() / moneyKart()
+console.log('\n[6] moneyTam() — tam rakam, kuruş kuralı');
+esit('kurus yok -> ,00 yazmaz', moneyTam(32040), '32.040 ₺');
+esit('kurus var -> yazar', moneyTam(32000.24), '32.000,24 ₺');
+esit('10.000 alti', moneyTam(7500), '7.500 ₺');
+esit('sifir', moneyTam(0), '0 ₺');
+esit('bos deger', moneyTam(null), '0 ₺');
+esit('undefined', moneyTam(undefined), '0 ₺');
+esit('negatif isaret basta', moneyTam(-1234.56), '-1.234,56 ₺');
+esit('milyon bile tam rakam', moneyTam(1320000), '1.320.000 ₺');
+esit('doviz sembolu', moneyTam(1000, 'USD'), '1.000 USD');
+
+console.log('\n[7] moneyKart() — 1.000.000 esigi (kullanici karari)');
+esit('32.040 tam rakam kalmali', moneyKart(32040), '32.040 ₺');
+esit('583.527,03 tam rakam kalmali', moneyKart(583527.03), '583.527,03 ₺');
+esit('999.999 -> tam rakam (esik alti)', moneyKart(999999), '999.999 ₺');
+esit('1.000.000 -> kisaltma (esik)', moneyKart(1000000), '1 milyon ₺');
+esit('1.320.000 -> kisaltma', moneyKart(1320000), '1 milyon 320 bin ₺');
+esit('2.450.000.000 -> kisaltma', moneyKart(2450000000), '2 milyar 450 milyon ₺');
+esit('sifir', moneyKart(0), '0 ₺');
+esit('bos deger', moneyKart(null), '0 ₺');
+// negatif ve esik alti: 500.000 < 1.000.000 -> tam rakam (kisaltma YOK)
+esit('negatif esik alti', moneyKart(-500000), '-500.000 ₺');
+esit('negatif esik ustu', moneyKart(-1320000), '-1 milyon 320 bin ₺');
+esit('doviz sembolu', moneyKart(1000000, 'USD'), '1 milyon USD');
+esit('para birimi hep sonda', moneyKart(999999).endsWith('₺'), true);
 
 console.log('');
 console.log(`Sonuc: ${gecti} gecti, ${kaldi} kaldi`);

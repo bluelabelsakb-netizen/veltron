@@ -250,6 +250,28 @@ export const moneyTam = (value, sembol = '₺') => {
 };
 
 /**
+ * KART BİÇİMİ — para kartlarında kullanılacak gösterim (moneyKart).
+ * =====================
+ * Kullanıcı kararı (1 Ekim 2026):
+ *   - Normal tutarlar TAM RAKAM:  "32.040 ₺", "583.527,03 ₺"
+ *     (kuruş yoksa ",00" yazılmıyor)
+ *   - ÇOK BÜYÜK tutarlar KISALTMALI: "2 milyar 450 milyon ₺"
+ *     çünkü tam yazımı karttan taşıyor.
+ *
+ * EŞİK = 1.000.000. Neden:
+ *   - 583.527,03 (Alacak) tam rakam kalmali — kullanici onayladi
+ *   - 1.320.000,00 zaten 11 karakter + kart genisligi -> "1 milyon 320 bin" daha iyi
+ *   - 10.000 ve 32.040 gibi degerler kesinlikle tam rakam kalmali
+ *
+ * ÖNCEKİ HALİ: 10.000'in üstü hep kısaltılıyordu ("32 bin ₺"), bu yüzden
+ * aynı satırdaki kartlar birbiriyle tutarsızdı.
+ */
+export const moneyKart = (value, sembol = '₺') => {
+  const n = Number(value || 0);
+  return Math.abs(n) < 1_000_000 ? moneyTam(n, sembol) : moneyOkunur(n, sembol);
+};
+
+/**
  * YUZDE — Turkce ondalik ayraci ile.
  *
  * API marji "72.9" (nokta) dondurur; dogrudan yazilirsa "%72.9" cikar ve

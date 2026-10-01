@@ -1,5 +1,5 @@
 import { Inbox } from 'lucide-react';
-import { moneyTam } from '../lib/api.js';
+import { moneyKart } from '../lib/api.js';
 
 /** Kayit yokken gosterilen bilgilendirme. */
 export function EmptyState({ icon: Icon = Inbox, title = 'Kayıt bulunamadı', description, action, compact = false }) {
@@ -88,16 +88,13 @@ function KpiBody({ label, value, sub, color, Icon, small }) {
 /**
  * PARA GOSTEREN KPI KARTI
  * ========================
- * Kullanici istegi (1 Ekim 2026): para kartlari HER ZAMAN tam rakam
- * gosterir, "bin"/"milyon" kisaltmasi olmaz. Ayni satirdaki kartlar
- * tutarsiz gorunuyordu: birinde "32 bin ₺", digerinde "7.500,00 ₺".
- *
- *   32.040       -> "32.040 ₺"       kuruş yok -> ",00" yazılmıyor
- *   32.000,24    -> "32.000,24 ₺"    kuruş var  -> yazılıyor
+ * Kullanici karari (1 Ekim 2026), `moneyKart()` icinde tanimli:
+ *   - Normal tutarlar TAM RAKAM:  "32.040 ₺", "583.527,03 ₺"
+ *   - 1.000.000 ve uzeri KISALTMA: "1 milyon 320 bin ₺"
+ *     (tam yazimi karttan tasiyordu)
  *
  * ONCEDEN iki basamak gosteriliyordu ("1 milyon 320 bin" + altta tam rakam).
- * Artik gerek yok: buyuk deger tam rakam oldugu icin alt satirdaki tekrar
- * kaldirildi.
+ * Tam rakam ana degere gelince alt satirdaki tekrar kaldirildi.
  *
  * NOT: `money()` DEGISTIRILMEDI. Belgelerde (fatura, Excel, bordro) kuruş
  * yazmasi dogru. Bu yalnizca ekran gorunumu icindir.
@@ -117,7 +114,7 @@ export function KpiMoney({
   small,
   onClick,
 }) {
-  return <Kpi {...{ label, value: moneyTam(value, sembol), sub, color, icon: Icon, onClick, small }} />;
+  return <Kpi {...{ label, value: moneyKart(value, sembol), sub, color, icon: Icon, onClick, small }} />;
 }
 
 /** Sayfa basligi + aksiyon alani. */
