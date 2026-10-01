@@ -10,7 +10,7 @@ import {
 import { api, money, moneyOkunur, moneyShort, number, percent, dateFmt, toCsv } from '../lib/api.js';
 import { guzelEksen, guzelAdim, eksenTickleri } from '../lib/chartScale.js';
 import { useToast } from '../components/Toast.jsx';
-import { PageHeader, Kpi, KpiMoney, EmptyState } from '../components/Primitives.jsx';
+import { PageHeader, Kpi, KpiMoney, EmptyState, Tip } from '../components/Primitives.jsx';
 import { DataTable } from '../components/DataTable.jsx';
 
 const CHART_COLORS = ['#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6', '#14b8a6'];
@@ -430,9 +430,9 @@ export default function Profit() {
                     const max = Math.max(...data.by_customer.map((x) => x.revenue), 1);
                     return (
                       <div className="bar-row" key={c.id}>
-                        <span className="bar-label" title={c.name}>
-                          {c.name}
-                        </span>
+                        <Tip text={c.name}>
+                          <span className="bar-label">{c.name}</span>
+                        </Tip>
                         <span className="bar-track">
                           <span
                             className="bar-fill"
@@ -470,9 +470,9 @@ export default function Profit() {
                       const max = Math.max(...data.by_subcontractor.map((x) => x.cost), 1);
                       return (
                         <div className="bar-row" key={t.id}>
-                          <span className="bar-label" title={t.name}>
-                            {t.name}
-                          </span>
+                          <Tip text={t.name}>
+                            <span className="bar-label">{t.name}</span>
+                          </Tip>
                           <span className="bar-track">
                             <span
                               className="bar-fill"

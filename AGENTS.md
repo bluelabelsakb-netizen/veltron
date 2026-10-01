@@ -194,6 +194,15 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     diskte yaşar, GitHub'da değil.
 12. **`.exe` üretilemiyor.** Windows Developer Mode kapalı — ortam engeli, kod
     sorunu değil. Program normal çalışıyor.
+13. **`CORS_ORIGIN` içinde `app://bundle` OLMALI.** Veltron iki yolla açılır:
+    - `npm run dev` → arayüz `http://localhost:5173` → listede var → çalışır
+    - `npm start` / kurulum paketi → arayüz `app://bundle` → **listede yoksa
+      "Sunucuya ulaşılamıyor" ve BOŞ EKRAN**
+
+    Bu satır 1 Ekim 2026'da `.env`'de eksikti; program yalnızca geliştirme
+    modunda çalışıyordu, kimse fark etmedi. `server/.env.example` düzeltildi.
+    **`server/.env` her bilgisayarda elle güncellenmeli** — bu dosya Git'te
+    değil, USB ile taşınırken de kontrol et.
 
 ---
 
@@ -345,12 +354,51 @@ git push        # BİTMEDEN ÖNCE — her zaman
 
 ## 10. Bu Dosyayı Ne Zaman Güncelle
 
-- Yeni iş kuralı → Bölüm 2 · Yeni tuzak → Bölüm 4
-- İş tamamlandı / sıraya girdi → Bölüm 8 · Kod haritası değişti → Bölüm 3
-- Test sayısı değişti → Bölüm 5 · "Bunu yapma" kararı → Bölüm 8
+**Her adımdan sonra DEĞİL.** Sadece kalıcı bir şey değiştiğinde:
 
-**Kural: bir bilgi sadece konuşmada kalıyorsa, bu dosyaya yazılmamış demektir
-ve kaybolma riski taşır.**
+| Güncelle | Güncelleme |
+|---|---|
+| Yeni iş kuralı öğrendin | Bölüm 2 |
+| Yeni tuzakla karşılaştın | Bölüm 4 |
+| "Bunu yapma" dedin | Bölüm 8 |
+| İş tamamlandı / sıraya girdi | Bölüm 8 |
+| Test sayısı değişti | Bölüm 5 |
+| Yeni modül eklendi | Bölüm 3 |
+
+Kod yazıp commit atmak bu dosyanın güncellenmesini **gerektirmez.**
+
+- **Kural değişikliklerinde tek satırlık düzenleme yap, dosyayı baştan yazma.**
+  Kullanıcının token'ı sınırlı, her turda tam yeniden yazım pahalıya gelir.
+- `AGENTS.md` = değişmez kurallar. `PROJE-DURUMU.md` = ne oldu, ne kaldı.
+  Oturum sonunda durumu `PROJE-DURUMU.md`'ye bir satır olarak ekle.
+
+---
+
+## 11. Çalışma Düzeni: 3 Bilgisayar + USB
+
+Kullanıcı 3 bilgisayar arasında **USB bellekle** taşıyor. Kod için asıl kaynak
+GitHub; USB ikinci yol.
+
+**Kritik kural — veritabanını USB ÜZERİNDE ÇALIŞTIRMA.**
+
+SQLite `journal_mode=WAL` kullanıyor. WAL bellek eşleme (mmap) ve dosya kilidi
+gerektiriyor; USB belleklerde bu kilit kararsız kalabilir ve **veritabanı bozulur**.
+Doğru sıra:
+
+```
+1. Sunucuyu DURDUR     (Get-Process node | Stop-Process -Force)
+2. 3 dosyayı kopyala   veltron.db + veltron.db-wal + veltron.db-shm
+3. Sunucuyu BAŞLAT
+```
+
+- `.db-wal` **mutlaka** kopyalanmalı. `veltron.db` 548 KB ama `-wal` 4 MB; son
+  yazmalar ana dosyada değil WAL'da. WAL olmadan kopya sessizce eksik veri verir.
+- Kopyalama sonrası boyutları karşılaştır, `-wal` dosyası **4 MB** civarında olmalı.
+- `node_modules` her bilgisayarda ayrı `npm install` ile kurulur, taşınmaz.
+- `.env` her bilgisayarda kendi `JWT_SECRET`'iyle olmalıdır.
+
+**Her oturumun başında ve sonunda `git pull` / `git push`.** Aynı anda iki
+bilgisayarda çalışma.
 
 ---
 

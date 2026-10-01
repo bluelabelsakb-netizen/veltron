@@ -22,6 +22,25 @@ export function Loading({ label = 'Yükleniyor...' }) {
   );
 }
 
+/**
+ * Koyu temali ipucu (tooltip).
+ *
+ * NEDEN VAR: HTML'in `title` ozelligi tarayicinin kendi kutusunu cizer —
+ * beyaz arka planli, kirpilan metni gosterir. Koyu temada parlak beyaz
+ * kutu beliriyordu. Bunun yerine tema kendi kutusunu kullanir.
+ *
+ * KULLANIM: <Tip text="Tam ad"><span className="bar-label">Kisaltilmis</span></Tip>
+ */
+export function Tip({ text, children }) {
+  if (!text) return children;
+  return (
+    <span className="tip">
+      {children}
+      <span className="tip-bubble">{text}</span>
+    </span>
+  );
+}
+
 /** Sayfa ici kucuk yukleme gostergesi (tabloyu degistirmeden). */
 export function InlineLoading() {
   return <span className="spinner" aria-label="Yükleniyor" />;

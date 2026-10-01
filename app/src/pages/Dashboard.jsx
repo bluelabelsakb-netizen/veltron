@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { api, money, moneyOkunur, moneyShort, number, percent, dateFmt, statusLabel, statusTone, dueLabel, initials } from '../lib/api.js';
 import { guzelEksen, eksenTickleri } from '../lib/chartScale.js';
-import { PageHeader, Kpi, KpiMoney, EmptyState, Loading } from '../components/Primitives.jsx';
+import { PageHeader, Kpi, KpiMoney, EmptyState, Loading, Tip } from '../components/Primitives.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -22,7 +22,20 @@ const tooltipStyle = {
   borderRadius: 8,
   fontSize: 12,
   color: '#e6ecf5',
+  padding: '8px 10px',
+  boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
 };
+
+// Recharts her satiri kendi rengiyle boyar. Koyu temada seri rengi koyu
+// kalinca (pasta grafik) yazi okunmaz oluyordu. Renkleri BURADA sabitliyoruz.
+// (onceki durum: "Devam Ediyor" koyu gri, sadece ": 3" okunuyordu)
+const tooltipLabelStyle = {
+  color: '#e6ecf5',
+  fontWeight: 600,
+  marginBottom: 4,
+};
+
+const tooltipItemStyle = { color: '#cfd9e8' };
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -108,6 +121,39 @@ export default function Dashboard() {
         }
       />
 
+      {/* ---------------- Ozet kartlari (en ust) ---------------- */}
+      <div className="kpi-grid">
+        <Kpi label="Aktif müşteri" value={number(k.active_customers)} color="#06b6d4" icon={Building2} small />
+        <Kpi label="Aktif çalışan" value={number(k.active_employees)} color="#22c55e" icon={Users} small />
+        <Kpi label="7 gün içinde teslim" value={number(k.due_soon_tasks)} color="#f59e0b" icon={CalendarClock} small />
+        <Kpi
+          label="Fatura durumu"
+          value={data.distributions.invoices.length}
+          color="#3b82f6"
+          icon={Receipt}
+          sub={data.distributions.invoices.map((i) => `${statusLabel(i.key)}: ${i.value}`).join(' · ')}
+          small
+        />
+        <Kpi
+          label="Bekleyen teklif"
+          value={number(k.pending_quotes)}
+          color="#8b5cf6"
+          icon={FileText}
+          sub="Müşteri yanıtı bekliyor"
+          onClick={() => navigate('/teklifler')}
+          small
+        />
+        <Kpi
+          label="Kritik stok"
+          value={number(k.critical_stock)}
+          color={k.critical_stock > 0 ? '#ef4444' : '#22c55e'}
+          icon={Package}
+          sub={k.critical_stock > 0 ? 'Min. seviyede veya altında' : 'Stoklar yeterli'}
+          onClick={() => navigate('/urunler')}
+          small
+        />
+      </div>
+
       {/* ---------------- Sayisal gostergeler ---------------- */}
       <div className="kpi-grid">
         <Kpi
@@ -158,22 +204,6 @@ export default function Dashboard() {
           sub={k.outstanding > 0 ? 'Tahsilat bekleyen' : 'Borç yok'}
           onClick={() => navigate('/faturalar')}
         />
-        <Kpi
-          label="Bekleyen teklif"
-          value={number(k.pending_quotes)}
-          color="#8b5cf6"
-          icon={FileText}
-          sub="Müşteri yanıtı bekliyor"
-          onClick={() => navigate('/teklifler')}
-        />
-        <Kpi
-          label="Kritik stok"
-          value={number(k.critical_stock)}
-          color={k.critical_stock > 0 ? '#ef4444' : '#22c55e'}
-          icon={Package}
-          sub={k.critical_stock > 0 ? 'Min. seviyede veya altında' : 'Stoklar yeterli'}
-          onClick={() => navigate('/urunler')}
-        />
       </div>
 
       {/* ---------------- Grafigler ---------------- */}
@@ -210,6 +240,8 @@ export default function Dashboard() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
                     formatter={(v, n) => [money(v), n === 'invoiced' ? 'Faturalanan' : 'Tahsilat']}
                     labelFormatter={(l, p) => p?.[0]?.payload?.month ?? l}
                   />
@@ -259,7 +291,12 @@ export default function Dashboard() {
                           <Cell key={i} fill={toneColor(statusTone(row.key))} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [v, n]} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        labelStyle={tooltipLabelStyle}
+                        itemStyle={tooltipItemStyle}
+                        formatter={(v, n) => [`${number(v)} proje`, n]}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -307,8 +344,10 @@ export default function Dashboard() {
                       <YAxis tick={{ fill: '#6b788d', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                       <Tooltip
                         contentStyle={tooltipStyle}
+                        labelStyle={tooltipLabelStyle}
+                        itemStyle={tooltipItemStyle}
                         cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                        formatter={(v, n) => [v, 'Görev']}
+                        formatter={(v, n) => [number(v), 'Görev']}
                       />
                       <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {tasksDist.map((row, i) => (
@@ -371,9 +410,9 @@ export default function Dashboard() {
             ) : (
               data.top_customers.map((c) => (
                 <div className="bar-row" key={c.id}>
-                  <span className="bar-label" title={c.label}>
-                    {c.label}
-                  </span>
+                  <Tip text={c.label}>
+                    <span className="bar-label">{c.label}</span>
+                  </Tip>
                   <span className="bar-track">
                     <span
                       className="bar-fill"
@@ -461,20 +500,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="kpi-grid" style={{ marginTop: 14 }}>
-        <Kpi label="Aktif müşteri" value={number(k.active_customers)} color="#06b6d4" icon={Building2} small />
-        <Kpi label="Aktif çalışan" value={number(k.active_employees)} color="#22c55e" icon={Users} small />
-        <Kpi label="7 gün içinde teslim" value={number(k.due_soon_tasks)} color="#f59e0b" icon={CalendarClock} small />
-        <Kpi
-          label="Fatura durumu"
-          value={data.distributions.invoices.length}
-          color="#3b82f6"
-          icon={Receipt}
-          sub={data.distributions.invoices.map((i) => `${statusLabel(i.key)}: ${i.value}`).join(' · ')}
-          small
-        />
       </div>
     </div>
   );
