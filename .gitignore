@@ -6,6 +6,12 @@ node_modules/
 app/dist/
 app/release/
 
+# Kurulum paketi hazırlık klasörü (2 Ekim 2026) — 54 MB, sunucu kodu +
+# üretim paketleri + .env + veritabanı KOPYASI içerir.
+# `npm run dist` öncesi tools-src/kurulum-hazirla.mjs ile yeniden üretilir.
+# ⛔ ASLA repoya girmemeli: içinde veritabanı ve gizli anahtarlar var.
+build/server-runtime/
+
 # Veritabanı — sunucuda kalır.
 # Taşımak istiyorsanız BU DOSYAYI AYRI KOPYALAYIN (aşağıya bakın).
 server/data/

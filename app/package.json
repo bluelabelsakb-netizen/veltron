@@ -42,16 +42,37 @@
       "dist/**/*",
       "electron/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "../build/server-runtime",
+        "to": "server-runtime",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "npmRebuild": false,
     "win": {
       "target": [
-        "nsis"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/icon.png",
+      "artifactName": "Veltron-Kurulum-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Veltron Takip",
+      "include": "../build/installer.nsh",
+      "deleteAppDataOnUninstall": false
     }
   }
 }

@@ -194,14 +194,26 @@ a:hover { text-decoration: underline; }
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 14px;
-  padding: 0 10px 0 18px;
+  padding: 0 10px 0 26px;
+  min-height: 52px;               /* 2 Ekim: biraz daha nefes alanı */
   -webkit-app-region: drag; /* cercevesiz pencerede tasima alani */
 }
 /* Buton, girdi ve baglantilar tasima alani olmamali. */
 .header button, .header input, .header select, .header a,
 .user-chip, .conn-status, .win-controls { -webkit-app-region: no-drag; }
 
-.header-title { font-size: 15px; font-weight: 600; }
+/* ⛔ .header-title KIRINTI GİBİ GÖRÜNMELİ (2 Ekim 2026)
+ * Sayfa başlığı zaten aşağıda büyük punto ile yazılıyor. Üstteki metin
+ * ikinci kez "İş Emirleri" yazınca tekrar gibi duruyordu.
+ * Küçültüp soluklaştırınca "buradasın" bilgisini verir, rekabet etmez.
+ * Önce: 15px / 600  →  Şimdi: 12.5px / 500 + soluk renk
+ */
+.header-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
 .header-sub { font-size: 12px; color: var(--text-dim); }
 .header-spacer { flex: 1; }
 
@@ -244,14 +256,26 @@ a:hover { text-decoration: underline; }
 
 .main { grid-area: main; overflow-y: auto; overflow-x: hidden; }
 
-.page { padding: 20px 22px 40px; max-width: 1680px; }
+/* İÇERİK BOŞLUĞU (2 Ekim 2026 — kullanıcı isteği)
+ * ------------------------------------------------
+ * Sayfa üst çubuğu (header) hem de .page-head kendi başlığını gösterir.
+ * İş Emirleri gibi sayfalarda ikisi de aynı metni yazıyordu ("İş Emirleri"
+ * üstte, "İş Emirleri" hemen altta) ve aralarında yalnız 20px vardı —
+ * yapışık görünüyordu.
+ *
+ * Yapılan: dikey boşluk açıldı ve hiyerarşi netleştirildi.
+ *   .header-title  -> küçük ve soluk  (kırıntı/yer imi gibi)
+ *   .page-head h1  -> büyük ve belirgin (asıl başlık)
+ * Böylece ikisi "tekrarlanan hata" gibi değil, "kırıntı + başlık" gibi okunur.
+ */
+.page { padding: 26px 26px 48px; max-width: 1680px; }
 
 .page-head {
   display: flex; align-items: flex-start; gap: 16px;
-  margin-bottom: 18px; flex-wrap: wrap;
+  margin-bottom: 22px; flex-wrap: wrap;
 }
 .page-head-text { flex: 1; min-width: 240px; }
-.page-head h1 { margin-bottom: 3px; }
+.page-head h1 { margin-bottom: 4px; }
 .page-head p { color: var(--text-muted); font-size: 13px; margin: 0; }
 .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
