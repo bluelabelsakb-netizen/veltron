@@ -7,7 +7,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
-import { api, money, moneyOkunur, moneyShort, number, percent, dateFmt, toCsv } from '../lib/api.js';
+import { api, money, moneyTam, moneyShort, number, percent, dateFmt, toCsv } from '../lib/api.js';
 import { guzelEksen, guzelAdim, eksenTickleri } from '../lib/chartScale.js';
 import { useToast } from '../components/Toast.jsx';
 import { PageHeader, Kpi, KpiMoney, EmptyState, Tip } from '../components/Primitives.jsx';
@@ -234,7 +234,7 @@ export default function Profit() {
           value={number(s?.work_order_count)}
           color="#06b6d4"
           icon={Briefcase}
-          sub={`ort. ${moneyOkunur(s?.avg_profit)} kâr`}
+          sub={`ort. ${moneyTam(s?.avg_profit)} kâr`}
           small
         />
         <Kpi label="Toplam net" value={`${number(s?.net_weight)} ton`} color="#f59e0b" icon={PiggyBank} small />

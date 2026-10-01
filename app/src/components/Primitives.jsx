@@ -1,5 +1,5 @@
 import { Inbox } from 'lucide-react';
-import { money, moneyOkunur } from '../lib/api.js';
+import { moneyTam } from '../lib/api.js';
 
 /** Kayit yokken gosterilen bilgilendirme. */
 export function EmptyState({ icon: Icon = Inbox, title = 'Kayıt bulunamadı', description, action, compact = false }) {
@@ -86,17 +86,21 @@ function KpiBody({ label, value, sub, color, Icon, small }) {
 }
 
 /**
- * PARA GOSTEREN KPI KARTI — okunur rakam + tam rakam.
+ * PARA GOSTEREN KPI KARTI
+ * ========================
+ * Kullanici istegi (1 Ekim 2026): para kartlari HER ZAMAN tam rakam
+ * gosterir, "bin"/"milyon" kisaltmasi olmaz. Ayni satirdaki kartlar
+ * tutarsiz gorunuyordu: birinde "32 bin ₺", digerinde "7.500,00 ₺".
  *
- * Kullanici istegi: buyuk tutarlar "1 milyon 320 bin" seklinde okunsun.
- * ("1.320.000,00" rakamlar tek tek saymak zor.)
+ *   32.040       -> "32.040 ₺"       kuruş yok -> ",00" yazılmıyor
+ *   32.000,24    -> "32.000,24 ₺"    kuruş var  -> yazılıyor
  *
- * IKI BASAMAK GOSTERILIR:
- *   buyuk  -> "1 milyon 320 bin ₺"   (bakista okunur)
- *   altta  -> "1.320.000,00 ₺"       (kesin rakam, kayip yok)
+ * ONCEDEN iki basamak gosteriliyordu ("1 milyon 320 bin" + altta tam rakam).
+ * Artik gerek yok: buyuk deger tam rakam oldugu icin alt satirdaki tekrar
+ * kaldirildi.
  *
- * "Tam rakam zaten ayniysa" (orn. 5.430,50) alt satir TEKRARLANMAZ — kart
- * tek satira düşer, gereksiz gürültü olmaz.
+ * NOT: `money()` DEGISTIRILMEDI. Belgelerde (fatura, Excel, bordro) kuruş
+ * yazmasi dogru. Bu yalnizca ekran gorunumu icindir.
  *
  * Kullanim:
  *   <KpiMoney label="Toplam satış" value={s?.revenue} color="#3b82f6" icon={TrendingUp} small />
@@ -113,21 +117,7 @@ export function KpiMoney({
   small,
   onClick,
 }) {
-  const n = Number(value || 0);
-  const okunur = moneyOkunur(n, sembol);
-  const tam = money(n, true, sembol);
-
-  // Ayni metinse (kucuk rakamlar) alt satir tekrar edilmez.
-  const ayni = okunur === tam;
-
-  const alt = ayni ? sub : (
-    <>
-      <span style={{ opacity: 0.85 }}>{tam}</span>
-      {sub ? <span> · {sub}</span> : null}
-    </>
-  );
-
-  return <Kpi {...{ label, value: okunur, sub: alt, color, icon: Icon, onClick, small }} />;
+  return <Kpi {...{ label, value: moneyTam(value, sembol), sub, color, icon: Icon, onClick, small }} />;
 }
 
 /** Sayfa basligi + aksiyon alani. */
