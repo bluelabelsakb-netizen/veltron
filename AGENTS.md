@@ -363,6 +363,48 @@ Yeni boyut üretmek gerekirse `tools-src/ikon-uret.mjs` betiğini çalıştır
 
 ---
 
+## 5d. Fatura Kâğıdı ve E-posta (1 Ekim 2026)
+
+**Tasarım koda gömülü değil.** Görünüm `server/templates/fatura.html`
+dosyasındadır — düz metin, kod bilmeden düzenlenir. Dosyanın üstünde
+değiştirilebilecek her şey listelenmiş.
+
+| Ne | Dosya |
+|---|---|
+| **Şablon (TASARIM BURADA)** | `server/templates/fatura.html` |
+| Yer tutucu doldurucu | `server/src/utils/faturaSablon.js` |
+| HTML → PDF | `server/src/scripts/html-pdf.mjs` (Electron/Chromium) |
+| API uçları | `server/src/routes/faturaPosta.js` |
+| E-posta gönderimi | `server/src/utils/eposta.js` |
+| Gönderim penceresi | `app/src/components/InvoiceSendModal.jsx` |
+| Ayarlar bölümü | `app/src/pages/Settings.jsx` → "Fatura Görünümü" |
+| Testler | `server/test/faturaPosta.test.mjs` (62 kontrol) |
+| **Gmail kurulum (kullanıcı için)** | `tools-src/gmail-kurulum.md` |
+
+**Yer tutucular:** `{{FIRMA_ADI}}`, `{{FATURA_NO}}`, `{{KALEMLER}}`,
+`{{GENEL_TOPLAM}}`, `{{MARKA_RENK}}`, `{{LOGO_HTML}}`… Liste şablonun
+içinde. Yeni yer tutucu eklerken `faturaSablon.js`'teki `yer` nesnesine de ekle.
+
+**Otomatik gelenler:** logo ve marka rengi (Ayarlar → Firma Profili).
+`marka_color` yalnızca `#rrggbb` kabul edilir, `invoice_layout` yalnızca dosya
+adı (yol kaçışı engelli).
+
+**E-posta:** SMTP **kullanılmaz** — Gmail'in HTTPS API'si kullanılır (sunucudan
+465 portuna çıkmaz, hosting'de engellenmez). Şifre hiçbir yere yazılmaz;
+`.env`'den OAuth bilgileri okunur. Günlük kota 450, geçmiş `invoice_emails`
+tablosuna yazılır. Kurulum adım adım: **`tools-src/gmail-kurulum.md`**.
+
+**⛔ Route sırası tuzağı:** `faturaPostaRoutes`, `routes/index.js`'te
+`invoiceRoutes`'ten **önce** kaydedilmeli. `invoices.js`'teki `GET /:id`
+rotası `/gonderim-durumu` gibi sabit yolları da yakalar, `"id=NaN"` arar ve
+"Fatura bulunamadi" hatası verir. Bu oldu, düzeltildi — sırayı bozma.
+
+**Kullanılmayan dosyalar:** `pdfAltyapi.js` ve `faturaPdf.js` (elle kodlanmış
+PDF denemesi). Tasarım koda gömüldüğü ve xref ofsetleri bozuk çıktığı için
+bırakıldı. Referans için duruyor, **kullanma**.
+
+---
+
 ## 6. Çalışma Disiplini
 
 - **Her değişiklikten sonra `npm test` + arayüz testleri.**
