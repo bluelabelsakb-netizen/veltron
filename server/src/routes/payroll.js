@@ -23,7 +23,7 @@ const router = Router();
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const currentPeriod = () => new Date().toISOString().slice(0, 7);
 
-/** AyÄ±n gÃ¼n sayÄ±sÄ± (Excel: DAY(DATE(yil, ay+1, 0))) */
+/** Ayın gün sayısı (Excel: DAY(DATE(yil, ay+1, 0))) */
 const daysInPeriod = (period) => {
   const [y, m] = period.split('-').map(Number);
   return new Date(y, m, 0).getDate();
@@ -181,7 +181,7 @@ router.delete(
     const used = Number(get('SELECT COUNT(*) AS n FROM scores WHERE criterion_id = ?', [id])?.n ?? 0);
     if (used > 0) {
       run('UPDATE score_criteria SET is_active = 0 WHERE id = ?', [id]);
-      return res.json({ data: { id, archived: true, message: 'Puan kayitlari oldugu icin pasifleÅŸtirildi' } });
+      return res.json({ data: { id, archived: true, message: 'Puan kayitlari oldugu icin pasiflestirildi' } });
     }
     run('DELETE FROM score_criteria WHERE id = ?', [id]);
     res.json({ data: { id, deleted: true } });
@@ -201,7 +201,7 @@ const scoreSchema = z.object({
   evaluated_at: f.date(),
 });
 
-/** Puanlama matrisi: donem Ã— personel Ã— kriter. */
+/** Puanlama matrisi: dönem × personel × kriter. */
 router.get(
   '/scores',
   wrap((req, res) => {

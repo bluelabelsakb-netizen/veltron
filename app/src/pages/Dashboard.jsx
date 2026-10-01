@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -75,14 +75,14 @@ export default function Dashboard() {
     load();
   }, [load]);
 
-  if (loading && !data) return <Loading label="Panel hazÄ±rlanÄ±yor..." />;
+  if (loading && !data) return <Loading label="Panel hazırlanıyor..." />;
 
   if (error && !data) {
     return (
       <div className="page">
         <EmptyState
           icon={AlertTriangle}
-          title="Panel yÃ¼klenemedi"
+          title="Panel yüklenemedi"
           description={error}
           action={
             <button className="btn btn-primary" onClick={load}>
@@ -123,15 +123,15 @@ export default function Dashboard() {
 
       {/* ---------------- Ozet kartlari (en ust) ---------------- */}
       <div className="kpi-grid">
-        <Kpi label="Aktif mÃ¼ÅŸteri" value={number(k.active_customers)} color="#06b6d4" icon={Building2} small />
-        <Kpi label="Aktif Ã§alÄ±ÅŸan" value={number(k.active_employees)} color="#22c55e" icon={Users} small />
-        <Kpi label="7 gÃ¼n iÃ§inde teslim" value={number(k.due_soon_tasks)} color="#f59e0b" icon={CalendarClock} small />
+        <Kpi label="Aktif müşteri" value={number(k.active_customers)} color="#06b6d4" icon={Building2} small />
+        <Kpi label="Aktif çalışan" value={number(k.active_employees)} color="#22c55e" icon={Users} small />
+        <Kpi label="7 gün içinde teslim" value={number(k.due_soon_tasks)} color="#f59e0b" icon={CalendarClock} small />
         <Kpi
           label="Fatura durumu"
           value={data.distributions.invoices.length}
           color="#3b82f6"
           icon={Receipt}
-          sub={data.distributions.invoices.map((i) => `${statusLabel(i.key)}: ${i.value}`).join(' Â· ')}
+          sub={data.distributions.invoices.map((i) => `${statusLabel(i.key)}: ${i.value}`).join(' · ')}
           small
         />
         <Kpi
@@ -139,7 +139,7 @@ export default function Dashboard() {
           value={number(k.pending_quotes)}
           color="#8b5cf6"
           icon={FileText}
-          sub="MÃ¼ÅŸteri yanÄ±tÄ± bekliyor"
+          sub="Müşteri yanıtı bekliyor"
           onClick={() => navigate('/teklifler')}
           small
         />
@@ -148,7 +148,7 @@ export default function Dashboard() {
           value={number(k.critical_stock)}
           color={k.critical_stock > 0 ? '#ef4444' : '#22c55e'}
           icon={Package}
-          sub={k.critical_stock > 0 ? 'Min. seviyede veya altÄ±nda' : 'Stoklar yeterli'}
+          sub={k.critical_stock > 0 ? 'Min. seviyede veya altında' : 'Stoklar yeterli'}
           onClick={() => navigate('/urunler')}
           small
         />
@@ -161,11 +161,11 @@ export default function Dashboard() {
           value={number(k.active_projects)}
           color="#3b82f6"
           icon={FolderKanban}
-          sub={`${number(k.completed_projects)} tamamlandÄ±`}
+          sub={`${number(k.completed_projects)} tamamlandı`}
           onClick={() => navigate('/projeler')}
         />
         <Kpi
-          label="AÃ§Ä±k gÃ¶rev"
+          label="Açık görev"
           value={number(k.open_tasks)}
           color="#a855f7"
           icon={CheckSquare}
@@ -173,11 +173,11 @@ export default function Dashboard() {
           onClick={() => navigate('/gorevler')}
         />
         <Kpi
-          label="Geciken gÃ¶rev"
+          label="Geciken görev"
           value={number(k.overdue_tasks)}
           color="#ef4444"
           icon={AlertTriangle}
-          sub={k.open_tasks ? `AÃ§Ä±k gÃ¶revlerin ${percent(overdueRatio, 0)}'i` : 'Gecikme yok'}
+          sub={k.open_tasks ? `Açık görevlerin ${percent(overdueRatio, 0)}'i` : 'Gecikme yok'}
           onClick={() => navigate('/gorevler')}
         />
         <Kpi
@@ -201,7 +201,7 @@ export default function Dashboard() {
           value={k.outstanding}
           color={k.outstanding > 0 ? '#f59e0b' : '#22c55e'}
           icon={TrendingUp}
-          sub={k.outstanding > 0 ? 'Tahsilat bekleyen' : 'BorÃ§ yok'}
+          sub={k.outstanding > 0 ? 'Tahsilat bekleyen' : 'Borç yok'}
           onClick={() => navigate('/faturalar')}
         />
       </div>
@@ -273,7 +273,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body">
             {data.distributions.projects.length === 0 ? (
-              <EmptyState compact title="Proje yok" description="Ä°lk projenizi ekleyerek baÅŸlayÄ±n." />
+              <EmptyState compact title="Proje yok" description="İlk projenizi ekleyerek başlayın." />
             ) : (
               <>
                 <div className="chart-box" style={{ height: 168 }}>
@@ -327,14 +327,14 @@ export default function Dashboard() {
         {/* Gorev durumu */}
         <div className="card">
           <div className="card-head">
-            <h3>GÃ¶rev Durumu</h3>
+            <h3>Görev Durumu</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/gorevler')}>
-              TÃ¼mÃ¼ <ArrowUpRight size={13} />
+              Tümü <ArrowUpRight size={13} />
             </button>
           </div>
           <div className="card-body">
             {data.distributions.tasks.length === 0 ? (
-              <EmptyState compact title="GÃ¶rev yok" />
+              <EmptyState compact title="Görev yok" />
             ) : (
               <>
                 <div className="chart-box" style={{ height: 150 }}>
@@ -347,7 +347,7 @@ export default function Dashboard() {
                         labelStyle={tooltipLabelStyle}
                         itemStyle={tooltipItemStyle}
                         cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                        formatter={(v, n) => [number(v), 'GÃ¶rev']}
+                        formatter={(v, n) => [number(v), 'Görev']}
                       />
                       <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {tasksDist.map((row, i) => (
@@ -372,14 +372,14 @@ export default function Dashboard() {
         {/* En cok yuklenen calisanlar */}
         <div className="card">
           <div className="card-head">
-            <h3>Ã‡alÄ±ÅŸan YÃ¼kÃ¼</h3>
+            <h3>Çalışan Yükü</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/calisanlar')}>
-              TÃ¼mÃ¼ <ArrowUpRight size={13} />
+              Tümü <ArrowUpRight size={13} />
             </button>
           </div>
           <div className="card-body">
             {data.workload.length === 0 ? (
-              <EmptyState compact title="Aktif Ã§alÄ±ÅŸan yok" />
+              <EmptyState compact title="Aktif çalışan yok" />
             ) : (
               data.workload.map((w) => (
                 <div className="list-row" key={w.id}>
@@ -389,10 +389,10 @@ export default function Dashboard() {
                   <div className="grow">
                     <div className="title truncate">{w.full_name}</div>
                     <div className="meta">
-                      {w.position || 'â€”'} Â· {number(w.spent_hours)} / {number(w.estimated_hours)} saat
+                      {w.position || '—'} · {number(w.spent_hours)} / {number(w.estimated_hours)} saat
                     </div>
                   </div>
-                  <span className={`badge ${w.open_tasks > 5 ? 'warning' : 'muted'}`}>{w.open_tasks} gÃ¶rev</span>
+                  <span className={`badge ${w.open_tasks > 5 ? 'warning' : 'muted'}`}>{w.open_tasks} görev</span>
                 </div>
               ))
             )}
@@ -402,11 +402,11 @@ export default function Dashboard() {
         {/* En cok gelir getiren musteriler */}
         <div className="card">
           <div className="card-head">
-            <h3>En Ã‡ok KazandÄ±ran MÃ¼ÅŸteriler</h3>
+            <h3>En Çok Kazandıran Müşteriler</h3>
           </div>
           <div className="card-body">
             {data.top_customers.length === 0 ? (
-              <EmptyState compact title="HenÃ¼z fatura yok" />
+              <EmptyState compact title="Henüz fatura yok" />
             ) : (
               data.top_customers.map((c) => (
                 <div className="bar-row" key={c.id}>
@@ -434,12 +434,12 @@ export default function Dashboard() {
         {/* Yaklasan terminler */}
         <div className="card">
           <div className="card-head">
-            <h3>YaklaÅŸan Terminler</h3>
-            <span className="text-dim text-sm">En yakÄ±n 8 gÃ¶rev</span>
+            <h3>Yaklaşan Terminler</h3>
+            <span className="text-dim text-sm">En yakın 8 görev</span>
           </div>
           <div className="card-body">
             {data.upcoming_tasks.length === 0 ? (
-              <EmptyState compact title="YaklaÅŸan gÃ¶rev yok" description="TÃ¼m gÃ¶revler tamamlanmÄ±ÅŸ gÃ¶rÃ¼nÃ¼yor." />
+              <EmptyState compact title="Yaklaşan görev yok" description="Tüm görevler tamamlanmış görünüyor." />
             ) : (
               data.upcoming_tasks.map((t) => {
                 const due = dueLabel(t.due_date);
@@ -461,7 +461,7 @@ export default function Dashboard() {
                       <div className="title truncate">{t.title}</div>
                       <div className="meta truncate">
                         {t.project_name || 'Projesiz'}
-                        {t.assignee_name ? ` Â· ${t.assignee_name}` : ''}
+                        {t.assignee_name ? ` · ${t.assignee_name}` : ''}
                       </div>
                     </div>
                     <span className={`${due.tone === 'over' ? 'due-over' : due.tone === 'soon' ? 'due-soon' : 'text-dim'} text-sm nowrap`}>
@@ -480,7 +480,7 @@ export default function Dashboard() {
           <div className="card-head">
             <h3>Son Hareketler</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/aktivite')}>
-              TÃ¼mÃ¼ <ArrowUpRight size={13} />
+              Tümü <ArrowUpRight size={13} />
             </button>
           </div>
           <div className="card-body">
@@ -492,7 +492,7 @@ export default function Dashboard() {
                   <div className="timeline-item" key={a.id}>
                     <div style={{ color: 'var(--text)' }}>{a.detail || `${a.entity} ${a.action}`}</div>
                     <div className="meta text-dim" style={{ fontSize: 11.5 }}>
-                      {a.user_name || 'Sistem'} Â· {relativeTime(a.created_at)}
+                      {a.user_name || 'Sistem'} · {relativeTime(a.created_at)}
                     </div>
                   </div>
                 ))}
@@ -523,11 +523,11 @@ function relativeTime(value) {
   const then = new Date(String(value).replace(' ', 'T') + (String(value).includes('Z') ? '' : 'Z'));
   const diff = Date.now() - then.getTime();
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return 'az Ã¶nce';
-  if (mins < 60) return `${mins} dk Ã¶nce`;
+  if (mins < 1) return 'az önce';
+  if (mins < 60) return `${mins} dk önce`;
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} saat Ã¶nce`;
+  if (hours < 24) return `${hours} saat önce`;
   const days = Math.round(hours / 24);
-  if (days < 7) return `${days} gÃ¼n Ã¶nce`;
+  if (days < 7) return `${days} gün önce`;
   return dateFmt(value);
 }
