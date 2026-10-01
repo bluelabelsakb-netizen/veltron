@@ -1,0 +1,57 @@
+{
+  "name": "@veltron/app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Veltron Masaüstü İstemci",
+  "author": {
+    "name": "Veltron",
+    "email": "info@veltron.local"
+  },
+  "license": "UNLICENSED",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "concurrently -n VITE,ELECTRON -c yellow,cyan \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "vite build",
+    "dist": "vite build && electron-builder --win --publish never",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "electron": "33.4.11",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.0.7",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.veltron.takip",
+    "productName": "Veltron Takip",
+    "copyright": "© 2026 Veltron",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

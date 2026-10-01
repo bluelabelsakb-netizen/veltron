@@ -1,0 +1,152 @@
+========================================================================
+MAAS SAYFASI - 5. satir formulleri (sutun sutun)
+========================================================================
+
+[1] Dönem
+    2026-09
+
+[2] Sicil No
+    P001
+
+[3] Personel
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$B$300,2,FALSE),""))
+
+[4] Birim
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$D$300,4,FALSE),""))
+
+[5] Brüt Maaş
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$K$300,11,FALSE),0))
+
+[6] Gün
+    =IF($A5="","",DAY(DATE(LEFT($A5,4),RIGHT($A5,2)+1,0)))
+
+[7] Dönem Puanı
+    =IF(OR($A5="",$B5=""),"",IF(SUMIFS(PuanOzeti!$F$5:$F$1000,PuanOzeti!$B$5:$B$1000,$B5,PuanOzeti!$A$5:$A$1000,$A5)=0,"",ROUND(SUMIFS(PuanOzeti!$E$5:$E$1000,PuanOzeti!$B$5:$B$1000,$B5,PuanOzeti!$A$5:$A$1000,$A5),1)))
+
+[8] Puan Primi
+    =IF($B5="","",IF(OR($G5="",$G5<=Ayarlar!$B$24),0,MIN(Ayarlar!$B$26,ROUND(($G5-Ayarlar!$B$24)*Ayarlar!$B$25,2))))
+
+[9] Ek Ödeme
+    None
+
+[10] Mesai Saat
+    6
+
+[11] Mesai Ücreti
+    =IF($A5="","",IFERROR(ROUND(MIN($J5,Ayarlar!$B$29)*IFERROR(VLOOKUP($B5,Personel!$A$5:$J$300,10,FALSE),0)*Ayarlar!$B$30,2),0))
+
+[12] Brüt Toplam
+    =IF($A5="","",ROUND(N($E5)+N($H5)+N($I5)+N($K5),2))
+
+[13] Vergi
+    =IF($A5="","",ROUND($L5*Ayarlar!$B$27/100,2))
+
+[14] SGK
+    =IF($A5="","",ROUND($L5*Ayarlar!$B$28/100,2))
+
+[15] Avans
+    0
+
+[16] Diğer Kesinti
+    None
+
+[17] NET
+    =IF($A5="","",ROUND($L5-$M5-$N5-N($O5)-N($P5),2))
+
+[18] Ödeme Durumu
+    Bekliyor
+
+[19] Not
+    ÖRNEK KAYIT — silinebilir
+
+========================================================================
+PUANOZETI - 5. satir formulleri
+========================================================================
+
+[1] Dönem
+    =IF(COUNTA(Personel!$A$5:$A$300)=0,"",IF(ROW()-4>Ayarlar!$B$11*COUNTA(Personel!$A$5:$A$300),"",IF(MATCH(Ayarlar!$B$9,tblDonem,0)-INT((ROW()-5)/COUNTA(Personel!$A$5:$A$300))<1,"",INDEX(tblDonem,MATCH(Ayarlar!$B$9,tblDonem,0)-INT((ROW()-5)/COUNTA(Personel!$A$5:$A$300))))))
+
+[2] Sicil No
+    =IF($A5="","",INDEX(Personel!$A$5:$A$300,MOD(ROW()-5,COUNTA(Personel!$A$5:$A$300))+1))
+
+[3] Personel
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$B$300,2,FALSE),""))
+
+[4] Birim
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$D$300,4,FALSE),""))
+
+[5] Dönem Puanı
+    =IF($A5="","",IF($F5=0,"",ROUND(SUMIFS(Puanlar!$H$5:$H$2000,Puanlar!$A$5:$A$2000,$A5,Puanlar!$B$5:$B$2000,$B5),1)))
+
+[6] Kriter Sayısı
+    =IF($A5="","",COUNTIFS(Puanlar!$A$5:$A$2000,$A5,Puanlar!$B$5:$B$2000,$B5))
+
+[7] Ortalama Kriter
+    =IF(OR($A5="",$F5=0),"",IFERROR(ROUND($E5/$F5,1),0))
+
+[8] Değerlendirme
+    =IF($A5="","",IF($F5=0,"",IF($E5>=90,"Mükemmel",IF($E5>=80,"Çok İyi",IF($E5>=70,"İyi",IF($E5>=60,"Gelişmeli","Yetersiz"))))))
+
+[9] Sıra
+    =IF($A5="","",IF($F5=0,"",COUNTIFS($A$5:$A$1000,$A5,$E$5:$E$1000,">"&$E5)+1))
+
+[10] Eksik Kriter
+    =IF($A5="","",IF($F5=0,"",COUNTA(Ayarlar!$A$15:$A$20)-$F5))
+
+========================================================================
+PUANLAR - 5. satir formulleri
+========================================================================
+
+[1] Dönem
+    2026-07
+
+[2] Sicil No
+    P001
+
+[3] Personel
+    =IF($B5="","",IFERROR(VLOOKUP($B5,Personel!$A$5:$B$300,2,FALSE),""))
+
+[4] Kriter Kodu
+    TEK
+
+[5] Kriter
+    =IF($D5="","",IFERROR(VLOOKUP($D5,Ayarlar!$A$15:$B$20,2,FALSE),""))
+
+[6] Puan
+    88
+
+[7] Ağırlık %
+    =IF($D5="","",IFERROR(VLOOKUP($D5,Ayarlar!$A$15:$C$20,3,FALSE),""))
+
+[8] Ağırlıklı Puan
+    =IF(OR($B5="",$F5=""),"",ROUND($F5*$G5/100,1))
+
+[9] Gerekçe / Not
+    Hatasız kablolama, sıfırdan fazla
+
+[10] Değerlendiren
+    Z. Kaya
+
+[11] Tarih
+    2026-09-30 00:00:00
+
+========================================================================
+GENELPERFORMANS - ilk 25 satir
+========================================================================
+  r1: 1:GENEL PERFORMANS
+  r2: 1:Şirket geneli özet. Üstte 12 KPI kartı, altta kişi bazlı per...
+  r5: 1:AKTİF PERSONEL | 3:ORTALAMA PUAN | 5:SON DÖNEM ORT. | 7:AKTİF İŞ
+  r6: 1:=COUNTIFS(Personel!$I$5:$I$300,"Aktif") | 3:=IFERROR(ROUND(AVERAGEIF($G$16:$G$65,">0"),1),0) | 5:=IFERROR(ROUND(AVERAGEIF($H$16:$H$65,">0"),1),0) | 7:=COUNTIF(İşler!$G$5:$G$400,"Devam Ediyor")
+  r7: 1:Aktif kadro | 3:Puanı olan personel ort. | 5:Aktif dönem ort. | 7:Devam eden iş
+  r13: 1:PERSONEL PERFORMANS TABLOSU
+  r15: 1:Sıra | 2:Sicil | 3:Personel | 4:Birim | 5:Ünvan | 6:Durum | 7:Ort. Puan | 8:Son Dönem
+  r16: 1:=IF($B16="","",IF($G16=0,"",RANK($G16,$G$16:$G$65,0))) | 2:=IF(Personel!$A$5="","",Personel!$A$5) | 3:=IF($B16="","",IFERROR(VLOOKUP($B16,Personel!$A$5:$C$300,2,F... | 4:=IF($B16="","",IFERROR(VLOOKUP($B16,Personel!$A$5:$D$300,4,F... | 5:=IF($B16="","",IFERROR(VLOOKUP($B16,Personel!$A$5:$C$300,3,F... | 6:=IF($B16="","",IFERROR(VLOOKUP($B16,Personel!$A$5:$I$300,9,F... | 7:=IF($B16="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B16="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B16,PuanO...
+  r17: 1:=IF($B17="","",IF($G17=0,"",RANK($G17,$G$16:$G$65,0))) | 2:=IF(Personel!$A$6="","",Personel!$A$6) | 3:=IF($B17="","",IFERROR(VLOOKUP($B17,Personel!$A$5:$C$300,2,F... | 4:=IF($B17="","",IFERROR(VLOOKUP($B17,Personel!$A$5:$D$300,4,F... | 5:=IF($B17="","",IFERROR(VLOOKUP($B17,Personel!$A$5:$C$300,3,F... | 6:=IF($B17="","",IFERROR(VLOOKUP($B17,Personel!$A$5:$I$300,9,F... | 7:=IF($B17="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B17="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B17,PuanO...
+  r18: 1:=IF($B18="","",IF($G18=0,"",RANK($G18,$G$16:$G$65,0))) | 2:=IF(Personel!$A$7="","",Personel!$A$7) | 3:=IF($B18="","",IFERROR(VLOOKUP($B18,Personel!$A$5:$C$300,2,F... | 4:=IF($B18="","",IFERROR(VLOOKUP($B18,Personel!$A$5:$D$300,4,F... | 5:=IF($B18="","",IFERROR(VLOOKUP($B18,Personel!$A$5:$C$300,3,F... | 6:=IF($B18="","",IFERROR(VLOOKUP($B18,Personel!$A$5:$I$300,9,F... | 7:=IF($B18="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B18="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B18,PuanO...
+  r19: 1:=IF($B19="","",IF($G19=0,"",RANK($G19,$G$16:$G$65,0))) | 2:=IF(Personel!$A$8="","",Personel!$A$8) | 3:=IF($B19="","",IFERROR(VLOOKUP($B19,Personel!$A$5:$C$300,2,F... | 4:=IF($B19="","",IFERROR(VLOOKUP($B19,Personel!$A$5:$D$300,4,F... | 5:=IF($B19="","",IFERROR(VLOOKUP($B19,Personel!$A$5:$C$300,3,F... | 6:=IF($B19="","",IFERROR(VLOOKUP($B19,Personel!$A$5:$I$300,9,F... | 7:=IF($B19="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B19="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B19,PuanO...
+  r20: 1:=IF($B20="","",IF($G20=0,"",RANK($G20,$G$16:$G$65,0))) | 2:=IF(Personel!$A$9="","",Personel!$A$9) | 3:=IF($B20="","",IFERROR(VLOOKUP($B20,Personel!$A$5:$C$300,2,F... | 4:=IF($B20="","",IFERROR(VLOOKUP($B20,Personel!$A$5:$D$300,4,F... | 5:=IF($B20="","",IFERROR(VLOOKUP($B20,Personel!$A$5:$C$300,3,F... | 6:=IF($B20="","",IFERROR(VLOOKUP($B20,Personel!$A$5:$I$300,9,F... | 7:=IF($B20="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B20="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B20,PuanO...
+  r21: 1:=IF($B21="","",IF($G21=0,"",RANK($G21,$G$16:$G$65,0))) | 2:=IF(Personel!$A$10="","",Personel!$A$10) | 3:=IF($B21="","",IFERROR(VLOOKUP($B21,Personel!$A$5:$C$300,2,F... | 4:=IF($B21="","",IFERROR(VLOOKUP($B21,Personel!$A$5:$D$300,4,F... | 5:=IF($B21="","",IFERROR(VLOOKUP($B21,Personel!$A$5:$C$300,3,F... | 6:=IF($B21="","",IFERROR(VLOOKUP($B21,Personel!$A$5:$I$300,9,F... | 7:=IF($B21="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B21="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B21,PuanO...
+  r22: 1:=IF($B22="","",IF($G22=0,"",RANK($G22,$G$16:$G$65,0))) | 2:=IF(Personel!$A$11="","",Personel!$A$11) | 3:=IF($B22="","",IFERROR(VLOOKUP($B22,Personel!$A$5:$C$300,2,F... | 4:=IF($B22="","",IFERROR(VLOOKUP($B22,Personel!$A$5:$D$300,4,F... | 5:=IF($B22="","",IFERROR(VLOOKUP($B22,Personel!$A$5:$C$300,3,F... | 6:=IF($B22="","",IFERROR(VLOOKUP($B22,Personel!$A$5:$I$300,9,F... | 7:=IF($B22="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B22="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B22,PuanO...
+  r23: 1:=IF($B23="","",IF($G23=0,"",RANK($G23,$G$16:$G$65,0))) | 2:=IF(Personel!$A$12="","",Personel!$A$12) | 3:=IF($B23="","",IFERROR(VLOOKUP($B23,Personel!$A$5:$C$300,2,F... | 4:=IF($B23="","",IFERROR(VLOOKUP($B23,Personel!$A$5:$D$300,4,F... | 5:=IF($B23="","",IFERROR(VLOOKUP($B23,Personel!$A$5:$C$300,3,F... | 6:=IF($B23="","",IFERROR(VLOOKUP($B23,Personel!$A$5:$I$300,9,F... | 7:=IF($B23="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B23="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B23,PuanO...
+  r24: 1:=IF($B24="","",IF($G24=0,"",RANK($G24,$G$16:$G$65,0))) | 2:=IF(Personel!$A$13="","",Personel!$A$13) | 3:=IF($B24="","",IFERROR(VLOOKUP($B24,Personel!$A$5:$C$300,2,F... | 4:=IF($B24="","",IFERROR(VLOOKUP($B24,Personel!$A$5:$D$300,4,F... | 5:=IF($B24="","",IFERROR(VLOOKUP($B24,Personel!$A$5:$C$300,3,F... | 6:=IF($B24="","",IFERROR(VLOOKUP($B24,Personel!$A$5:$I$300,9,F... | 7:=IF($B24="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B24="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B24,PuanO...
+  r25: 1:=IF($B25="","",IF($G25=0,"",RANK($G25,$G$16:$G$65,0))) | 2:=IF(Personel!$A$14="","",Personel!$A$14) | 3:=IF($B25="","",IFERROR(VLOOKUP($B25,Personel!$A$5:$C$300,2,F... | 4:=IF($B25="","",IFERROR(VLOOKUP($B25,Personel!$A$5:$D$300,4,F... | 5:=IF($B25="","",IFERROR(VLOOKUP($B25,Personel!$A$5:$C$300,3,F... | 6:=IF($B25="","",IFERROR(VLOOKUP($B25,Personel!$A$5:$I$300,9,F... | 7:=IF($B25="","",IFERROR(ROUND(AVERAGEIFS(PuanOzeti!$E$5:$E$10... | 8:=IF($B25="","",IF(COUNTIFS(PuanOzeti!$B$5:$B$1000,$B25,PuanO...

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      app:// protokolunden servis edildigi icin 'self' calisir.
+      connect-src sunucu adresi calisma aninda degisebildiginden tum http(s)
+      hedeflere izin verilir; hedefi kullanicinin belirledigi sunucudur.
+
+      ⛔ img-src'te 'blob:' OLMAK ZORUNDA:
+      `AuthImage` (Attachments.jsx) <img src> ile ozel Authorization
+      basligi gonderemedigi icin once fetch edip BLOB URL'ye ceviriyor.
+      'blob:' yoksa TIR FOTOGRAFLARI HIC GORUNMEZ — kirik resim olarak
+      bos kalir. Bu hata olustu, duzeltildi.
+
+      DIKKAT: Sunucu (helmet) AYRI bir CSP basligi gonderir. Ikisi birlikte
+      UYGULANIR ve EN KISITLAYICI kazanir. Bu yuzden iki yerin politikasi
+      tutarli olmali — birinde blob varsa digerinde de olmali.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src http: https:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Veltron Takip</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

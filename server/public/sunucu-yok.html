@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Veltron — Sunucu Bulunamadı</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; display: grid; place-items: center;
+        background: #0d1117; color: #e6ecf5; padding: 24px;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+      .kutu { max-width: 520px; width: 100%; }
+      .mark {
+        width: 46px; height: 46px; border-radius: 11px; margin-bottom: 18px;
+        background: linear-gradient(135deg, #3b82f6, #a855f7);
+        display: grid; place-items: center; font-weight: 800; font-size: 21px; color: #fff;
+      }
+      h1 { font-size: 21px; margin: 0 0 8px; }
+      p { color: #96a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+      .kutu-kart {
+        background: #1a212e; border: 1px solid #263041; border-radius: 8px;
+        padding: 16px; margin: 18px 0; font-size: 13px;
+      }
+      .kutu-kart b { color: #e6ecf5; }
+      .kod {
+        font-family: Consolas, monospace; background: #0d1117; color: #7dd3fc;
+        padding: 3px 8px; border-radius: 4px; border: 1px solid #263041; font-size: 12.5px;
+      }
+      .uyari {
+        background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35);
+        color: #fcd34d; padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6;
+      }
+      button {
+        margin-top: 18px; padding: 10px 18px; font-size: 14px; font-weight: 600;
+        background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;
+        font-family: inherit;
+      }
+      button:hover { background: #2f6fd8; }
+    </style>
+  </head>
+  <body>
+    <div class="kutu">
+      <div class="mark">V</div>
+      <h1>Sunucuya ulaşılamadı</h1>
+      <p>
+        Veltron sunucusu çalışmıyor ya da adres değişmiş. Program arayüzü de bu
+        sunucudan yüklendiği için bağlantı kurulana kadar ekran boş kalır.
+      </p>
+
+      <div class="kutu-kart">
+        <b>Sunucuyu başlatmak için:</b><br />
+        Proje klasöründe <span class="kod">Sunucuyu-Kur.bat</span> dosyasına çift tıklayın.<br />
+        Ya da bir terminal açıp şunu çalıştırın:<br /><br />
+        <span class="kod">npm run dev:server</span>
+      </div>
+
+      <div class="kutu-kart">
+        <b>Başka bir bilgisayardaki sunucuya bağlanmak için:</b><br />
+        <span class="kod">http://SUNUCU-IP-ADRESI:4000</span><br />
+        <span style="color: #6b788d; font-size: 12px">örneğin http://192.168.1.100:4000</span>
+      </div>
+
+      <div class="uyari">
+        <b>Sunucu bir kez kurulduysa bu ekranı görmemeniz gerekmez.</b>
+        <span class="kod">Sunucuyu-Kur.bat</span> dosyasını bir kez yönetici olarak
+        çalıştırın; sunucu bundan sonra Windows her açıldığında kendiliğinden başlar.
+      </div>
+
+      <button onclick="location.reload()">Tekrar Dene</button>
+    </div>
+  </body>
+</html>

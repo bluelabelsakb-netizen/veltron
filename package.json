@@ -1,0 +1,23 @@
+{
+  "name": "veltron",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Veltron İş Takip Sistemi - Sunucu + Masaüstü İstemci",
+  "workspaces": [
+    "server",
+    "app"
+  ],
+  "scripts": {
+    "setup": "npm install",
+    "dev:server": "npm run dev --workspace server",
+    "dev:app": "npm run dev --workspace app",
+    "dev": "concurrently -n SERVER,APP -c cyan,magenta \"npm:dev:server\" \"npm:dev:app\"",
+    "start": "npm run start --workspace server",
+    "build": "npm run build --workspace app",
+    "dist": "npm run dist --workspace app",
+    "reset-db": "npm run reset-db --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

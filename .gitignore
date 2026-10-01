@@ -1,0 +1,48 @@
+# Bağımlılıklar — MUTLAKA kopyalanmaz, hedef bilgisayarda `npm install` çalıştırılır.
+# (Node sürümüne ve işletim sistemine bağlıdır; kopyalamak sorun çıkarır.)
+node_modules/
+
+# Derleme çıktıları — yeniden üretilebilir
+app/dist/
+app/release/
+
+# Veritabanı — sunucuda kalır.
+# Taşımak istiyorsanız BU DOSYAYI AYRI KOPYALAYIN (aşağıya bakın).
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Ortam ayarları — her bilgisayarda kendi JWT_SECRET'ı olmalı
+.env
+.env.local
+
+# Baglanti araci (cloudflared) 52 MB — binaries, repoya girmemeli.
+# AILE-ERISIMI.md icindeki adimlarla yeniden indirilebilir.
+tools/
+*.exe
+!veltron/server/scripts/**/*.exe
+
+# Excel sistemi (ayri klasorde, kendi dosyalariyla)
+excel-sistemi/__pycache__/
+excel-sistemi/*.tmp
+
+# Isletim sistemi / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
+
+# NOT: Excel tabanli sistem 29 Eylul 2026'da kapatildi ve bu klasorden
+# cikarildi. Arsiv: C:\Users\pc-n\Documents\Veltron-Excel-arsiv\
+# (bkz. DEV-NOTES.md bolum 1.10)
+
+# Yuklenen dosyalar (tir fotograflari) - sunucuda kalir, repoya girmez.
+server/data/uploads/
+uploads/
+
+# Kurulum paketi (musteriye gonderilir, repoda tutulmaz)
+KurulumPaketi/
+KurulumPaketi.zip
