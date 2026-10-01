@@ -414,6 +414,31 @@ CREATE TABLE IF NOT EXISTS password_reset_requests (
   created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
+-- "BENI HATIRLA" CIHAZLARI (1 Ekim 2026)
+-- ==========================================
+-- Giris ekraninda "Beni hatirla" secilince sunucu 30 gunlik bir HATIRLEME
+-- jetonu uretir. SIFRE HICBIR YERE YAZILMAZ - sadece bu jeton saklanir.
+--
+-- Jetontan iki katmanli koruma:
+--   1) Bu tablo: iptal edilebilir ("Bu cihazi unut"), sure kontrolu
+--   2) JWT icindeki tv = token_version: sifre degisince hepsi olur
+--
+-- Yalnizca TEK bir cihaz satirini tutariz: her yeni "hatirla" ayni
+-- kullanici icin eskisini gecersiz kilar. Boylece kullanici "3. bilgisayar"
+-- yaparsa 1. bilgisayardaki hatirlama calismaz, karisiklik olmaz.
+CREATE TABLE IF NOT EXISTS remember_tokens (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  jti         TEXT    NOT NULL UNIQUE,        -- jetonun benzersiz kimligi
+  device_name TEXT,                           -- orn. "KURT-BILGISAYAR"
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+  expires_at  TEXT    NOT NULL,              -- 30 gun sonra
+  last_used_at TEXT,                          -- son otomatik giris
+  revoked_at  TEXT                           -- "Bu cihazi unut" -> dolu
+);
+
+CREATE INDEX IF NOT EXISTS idx_remember_user ON remember_tokens(user_id);
+
 -- Musterilerin islerinin durum degisikligi. Portalde "ilerleme" olarak gosterilir.
 -- Mali bilgi (fiyat, tutar, maliyet) BURAYA YAZILMAZ.
 CREATE TABLE IF NOT EXISTS work_order_status_history (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Server, LogIn, AlertCircle, Eye, EyeOff, RefreshCw, KeyRound } from 'lucide-react';
+import { Server, LogIn, AlertCircle, Eye, EyeOff, RefreshCw, KeyRound, MonitorSmartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { PasswordResetModal } from './PasswordResetModal.jsx';
@@ -26,6 +26,11 @@ export function Login({ serverDown = false }) {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // "Beni hatirla" (1 Ekim 2026). SIFRE SAKLANMAZ — sadece 30 gunluk
+  // hatirlama jetonu cihazda tutulur, program her acildiginda onunla
+  // otomatik giris yapar. Iptal etmek icin: Ayarlar > "Bu cihazi unut"
+  // veya kutuyu isaretlemeden giris yapmak.
+  const [remember, setRemember] = useState(true);
   // Sifre sifirlama talebi (yalnizca normal giris modunda).
   const [sifremiUnuttum, setSifremiUnuttum] = useState(false);
 
@@ -44,7 +49,7 @@ export function Login({ serverDown = false }) {
     setBusy(true);
     setError('');
     try {
-      await login(username, password);
+      await login(username, password, remember);
     } catch (err) {
       setError(err.message || 'Giriş başarısız.');
     } finally {
@@ -186,6 +191,36 @@ export function Login({ serverDown = false }) {
                 </button>
               </div>
             </div>
+
+            {/* "Beni hatirla" — sifre DEGIL, sadece jeton saklanir. */}
+            <label
+              className="auth-remember"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                marginTop: -4,
+                marginBottom: 12,
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                style={{ width: 15, height: 15, marginTop: 1, accentColor: 'var(--primary)', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <MonitorSmartphone size={12} />
+                  Beni hatırla
+                </span>
+                <span className="text-dim" style={{ display: 'block', marginTop: 2 }}>
+                  Bu bilgisayarda 30 gün boyunca otomatik giriş. Şifren kaydedilmez.
+                </span>
+              </span>
+            </label>
 
             <button className="btn btn-primary btn-block" disabled={busy}>
               <LogIn size={14} />

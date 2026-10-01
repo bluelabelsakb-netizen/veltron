@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell, dialog, protocol, net } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +45,9 @@ const configFile = () => path.join(app.getPath('userData'), 'veltron-config.json
 const defaultConfig = {
   serverUrl: 'http://localhost:4000',
   window: { width: 1440, height: 900 },
+  // "Beni hatirla" — SADECE HATIRLEMA JETONU saklanir, SIFRE DEGIL.
+  // null = bu cihaz hatirlanmamis.
+  remember: null,
 };
 
 function readConfig() {
@@ -132,6 +136,45 @@ function createWindow() {
 
 // --------------------------------------------------------------- IPC ----
 ipcMain.handle('config:get', () => readConfig());
+
+/**
+ * "BENİ HATIRLA" — cihazda saklanan jeton
+ * ======================================
+ * ⚠️ Buraya ASLA ŞİFRE yazılmaz. Sadece sunucunun verdiği 30 günlük
+ * hatırlama jetonu saklanır; şifre hiçbir yerde tutulmaz.
+ *
+ * Süresi dolmuş jetonlar okunurken temizlenir (istemci ayrıca sunucuya
+ * soruyor ama burada da bir ön eleme yapıyoruz).
+ */
+
+// Bilgisayar adı: kullanıcı "hangi cihaz?" sorusunu cevaplayabilsin.
+ipcMain.handle('remember:device', () => os.hostname());
+
+ipcMain.handle('remember:get', () => {
+  const { remember } = readConfig();
+  if (!remember?.token) return null;
+  if (remember.expiresAt && new Date(remember.expiresAt).getTime() < Date.now()) {
+    // Süresi dolmuş: sessizce temizle
+    writeConfig({ remember: null });
+    return null;
+  }
+  return remember;
+});
+
+ipcMain.handle('remember:set', (_e, veri) => {
+  if (!veri?.token) return writeConfig({ remember: null });
+  return writeConfig({
+    remember: {
+      token: veri.token,
+      username: String(veri.username || '').slice(0, 64),
+      device: String(veri.device || '').slice(0, 120),
+      expiresAt: veri.expiresAt || null,
+      savedAt: new Date().toISOString(),
+    },
+  });
+});
+
+ipcMain.handle('remember:clear', () => writeConfig({ remember: null }));
 
 ipcMain.handle('config:set-server', async (_e, serverUrl) => {
   const url = String(serverUrl || '').trim().replace(/\/+$/, '');

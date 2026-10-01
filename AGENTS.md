@@ -23,16 +23,17 @@ yönetimi).
 | Dil | **Türkçe** — arayüz metinleri, hata mesajları, para biçimi dahil |
 
 **Ölçek (1 Ekim 2026 itibarıyla ölçüldü):** 27 route · 35 sayfa · 13 bileşen ·
-37 tablo/görünüm · 25 betik · 14 kök doküman · **576 test**
+38 tablo/görünüm · 25 betik · 14 kök doküman · **627 test** (459 sunucu + 168 arayüz)
 
 **Ortam (bu bilgisayar):** Node v24.21.0 · Git 2.56.0 · GitHub CLI 2.102.0
 
 **Çalıştırma:**
 
 ```powershell
+# EN KOLAY: proje kökündeki Veltron-Ac.bat (sunucuyu başlatır + programı açar)
+# elle:
 cd server
 npm start                  # port 4000, HOST=0.0.0.0
-# Sonra Sunucuyu-Kur.bat → Electron açılır
 ```
 
 **Giriş:** `admin` / `server/.env` içindeki `ADMIN_PASSWORD`
@@ -164,7 +165,10 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | İş emri arayüzü | `app/src/pages/WorkOrders.jsx` |
 | Kâr arayüzü | `app/src/pages/Profit.jsx` |
 | Generic CRUD ekranı | `app/src/components/ResourcePage.jsx` |
-| Para biçimi (`1.134.180,91 ₺`) | `app/src/lib/` → money testi |
+| Para biçimi (`1.134.180,91 ₺`) | `app/src/lib/api.js` → `money()`, `moneyKart()` |
+| **Para kartı gösterimi** | `moneyKart()` — < 1.000.000 tam rakam, üstü kısaltma. `money()`'ı **değiştirme** (belgelerde `,00` yazması doğru) |
+| Hatırlama jetonu | `middleware/auth.js` + `routes/auth.js` → `/auth/remember` |
+| Program ikonu | `app/electron/icon.png` (üretici: `_ikon-uret.mjs`) |
 
 ---
 
@@ -203,30 +207,58 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     modunda çalışıyordu, kimse fark etmedi. `server/.env.example` düzeltildi.
     **`server/.env` her bilgisayarda elle güncellenmeli** — bu dosya Git'te
     değil, USB ile taşınırken de kontrol et.
+14. **Dosya içeriğini PowerShell ile DÜZENLEME.** Bu tuzak bir kez pahalıya
+    mal oldu. Şu komut kalıcı bozulma yarattı:
+    ```powershell
+    (Get-Content x.jsx -Raw) -replace 'a','b' | Set-Content x.jsx -Encoding UTF8
+    ```
+    PowerShell 5.1 dosyayı **cp1254 (Türkçe ANSI)** olarak okur, `ü`→`Ã¼`
+    yapar, UTF-8 olarak geri yazar → **çift kodlama**. Dashboard.jsx'te 35 satır
+    bozuldu; kart yazıları ekranda `Aktif mÃ¼ÅŸteri` göründü.
+    - Dosya içeriği değiştirmek için **sadece Edit aracı** kullan.
+    - PowerShell'i sadece komut çalıştırmak, git, dosya listeleme için kullan.
+    - Şüphede kalırsan: `git diff` ile bak, gerekirse `git checkout <commit> -- <dosya>`.
+15. **Mojibake (bozuk Türkçe) kontrolü.** Yeni dosya yazdıysan doğrula:
+    - `Ã¼`, `ÅŸ`, `Â°` gibi **iki karakterlik diziler** aranır (tek `â`/`Â`
+      GEÇERLİ Türkçe harftir — "Kâr", "Ân" — yanlış alarm verir).
+    - Raporu **stdout'a değil dosyaya** yaz. node → PowerShell konsol → dosya
+      zinciri karakterleri bozar ve 113 dosya "bozuk" gibi görünür (hiçbiri
+      bozuk değildi). Bu hatayı bir kez yaptık.
+16. **PNG üretirken parça yapısı:** `[4 bayt uzunluk][4 bayt tip][veri][4 bayt CRC]`
+    ve CRC **yalnızca tip+veri** üzerinden hesaplanır (uzunluk dahil değil).
+    Uzunluk/tip yazılmadan çıkan PNG sessizce bozuktur.
+17. **Hatırlama jetonu API'de KULLANILAMAZ.** `typ: 'remember'` kontrolü
+    `authenticate`'de var. Bu kaldırılırsa 30 günlük jeton normal erişim
+    jetonuna dönüşür.
 
 ---
 
 ## 5. Testler
 
-**Sunucu testleri — 9 dosya, 428 test:**
+**Sunucu testleri — 10 dosya, 459 test:**
 
 ```powershell
 cd server
-npm test          # koşucu: sunucuyu kendi başlatır, 9 dosyayı sırayla koşar
+npm test          # koşucu: sunucuyu kendi başlatır, 10 dosyayı sırayla koşar
 ```
 
 Dosyalar: `smoke` (57) · `payroll` (69) · `portal` (119) · `export` (31) ·
-`attachments` (23) · `demo` (24) · `import` (34) · `passwordReset` (32) · `taxes` (39)
+`attachments` (23) · `demo` (24) · `import` (34) · `passwordReset` (32) ·
+`taxes` (39) · `remember` (31)
 
-**Arayüz testleri — proje kökünden, 5 dosya, 148 test:**
+**Arayüz testleri — proje kökünden, 5 dosya, 168 test:**
 
 ```powershell
 node test/chartScale.test.mjs      # 23
-node test/money.test.mjs           # 32
+node test/money.test.mjs           # 53
 node test/lazy-export.test.mjs     # 29
 node test/ikon-import.test.mjs     # 55
 node test/csp.test.mjs             # 9
 ```
+
+**Şifre değiştiren testler `finally` ile geri almalı.** `remember.test.mjs`
+[F] bölümü bunu yapıyor. Aksi halde admin şifresi test değerinde kalır,
+sonraki koşular 400/429 alır ve 30+ test yanlış "kaldı" görünür.
 
 **Testleri GERÇEK VERİTABANI KARŞI KOŞTURMA.** Testler veri yazar. Kopyayla:
 
@@ -249,6 +281,85 @@ Remove-Item data\veltron-test.db* -Force
   `node src/scripts/reset-admin-password.js admin <sifre>`
 
 **Disiplinin:** değişiklikten sonra önce testler, sonra commit.
+
+---
+
+## 5b. "Beni Hatırla" (remember me)
+
+Giriş ekranındaki kutu → program her açılışta otomatik girer. **Kullanıcı C seçeneğini istedi: hatırla ama süreli.**
+
+**Ne saklanıyor, ne saklanmıyor**
+
+| Saklanır | Saklanmaz |
+|---|---|
+| 30 günlük hatırlama jetonu | **ŞİRE HİÇBİR YERDE** |
+| Kullanıcı adı, cihaz adı, bitiş tarihi | Şifre hash'i bile |
+| `veltron-config.json` (Electron) | — |
+
+Jetonsuz otomatik giriş **mümkün değildir**. Şifre girilmeden hiçbir şey
+kazanılamaz.
+
+**Akış**
+
+```
+Giriş (kutu işaretli) → POST /auth/login {remember:true}  → {token, remember_token}
+   → Electron remember.set()  → veltron-config.json
+Program açılışı          → POST /auth/remember {token}      → {token, user}
+   → 12 saatlik normal jeton, panele girer
+```
+
+**Dosyalar**
+
+| Ne | Dosya |
+|---|---|
+| Tablo | `server/src/schema.sql` → `remember_tokens` |
+| Jeton üretme/doğrulama | `server/src/middleware/auth.js` → `signRememberToken`, `verifyRememberToken`, `REMEMBER_TTL_DAYS = 30` |
+| Uçlar | `server/src/routes/auth.js` → `POST /login` (remember), `POST /remember`, `POST /remember/revoke` |
+| Disk yazımı | `app/electron/main.mjs` → `remember:get/set/clear`, `remember:device` |
+| Köprü | `app/electron/preload.cjs` → `remember.*` |
+| Otomatik giriş | `app/src/context/AuthContext.jsx` → `autoLogin()` |
+| Kutu | `app/src/pages/Login.jsx` |
+| Durum + "Bu cihazı unut" | `app/src/pages/Settings.jsx` |
+| Testler | `server/test/remember.test.mjs` (31 kontrol) |
+
+**Güvenlik kuralları — hepsi testli**
+
+1. Hatırlama jetonu **API uçlarında kullanılamaz** (`typ: 'remember'` → 401).
+   `authenticate` bunu reddeder. Bu olmadan 30 günlük jeton normal erişim
+   jetonuna dönüşür.
+2. Jetondaki `tv` = `token_version`. **Şifre değişince hatırlama ölür.**
+   `change-password` ayrıca `remember_tokens` kayıtlarını da iptal eder.
+3. Pasif kullanıcı hatırlama ile giremez.
+4. `revoke` → "Bu cihazı unut". Jeton hem yerelde hem sunucuda silinir.
+5. Uydurma/bozuk jeton reddedilir.
+
+**Tasarım kararları (kullanıcı onaylı)**
+
+- **Tek cihaz kuralı.** Yeni "hatırla" girişi öncekini iptal eder. Kullanıcı
+  3 bilgisayarda çalıştığı için kasıtlı: hangi cihazın hatırlandığı belli olsun.
+  (Değiştirilmesi istenirse `/auth/login` içindeki `UPDATE ... revoked_at` bloğunu kaldır.)
+- **`logout()` hatırlamayı da siler.** Paylaşılan bilgisayarda "Çıkış yap" deyip
+  cihazı devretmek isteyenin program yeniden açılınca otomatik girmemesi için.
+  Sadece cihazı unutmak isteyen → Ayarlar → "Bu cihazı unut".
+- Tarayıcıda (bridge yok) hatırlama **çalışmaz**; sadece Electron'ta.
+
+---
+
+## 5c. Uygulama İkonu
+
+`app/electron/icon.png` — 1024×1024 PNG. `main.mjs` pencere ikonu olarak
+kullanır (bu dosya uzun süre **yoktu**, Electron varsayılanını gösteriyordu).
+
+Görünüm arayüzdeki `.brand-mark` ile birebir aynı:
+`linear-gradient(135deg, #3b82f6 → #a855f7)`, köşe yarıçapı 7/30, beyaz kalın "V",
+köşeler saydam.
+
+Masaüstü sürümleri: `veltron-ikon-1024/512/256/128.png`.
+Yeni boyut üretmek gerekirse `tools-src/ikon-uret.mjs` betiğini çalıştır
+(`node tools-src/ikon-uret.mjs`), PNG parça yapısına dikkat et (Tuzak 16).
+
+> Not: `tools-src/` sadece kaynak betikler içindir, `tools/` klasörü
+> (cloudflared binary) `.gitignore`'da dışarıda — karıştırma.
 
 ---
 
@@ -307,8 +418,11 @@ git push        # BİTMEDEN ÖNCE — her zaman
 - Excel dışa aktarma (15 sayfa, logo gömülü, formül enjeksiyonu korumalı)
 - Excel içe aktarma, demo modu + lisans, kurulum paketi
 - Şifre sıfırlama talebi (giriş ekranı + yönetici onayı + Telegram bildirimi)
+- **"Beni hatırla"** — 30 günlük hatırlama jetonu, şifre saklanmaz (bkz. 5b)
 - Aile erişimi (Cloudflare Tunnel), güvenlik denetimi
-- 576 test geçiyor
+- **`Veltron-Ac.bat`** — tek tıkla açma (sunucu + program birlikte)
+- Program ikonu (`app/electron/icon.png`)
+- 627 test geçiyor
 
 ### ⬜ Bilinen açıklar / sıradakiler
 

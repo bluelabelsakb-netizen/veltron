@@ -11,6 +11,13 @@ contextBridge.exposeInMainWorld('veltron', {
     get: () => ipcRenderer.invoke('config:get'),
     setServer: (url) => ipcRenderer.invoke('config:set-server', url),
   },
+  // "Beni hatirla" — SADECE JETON. Sifre buradan gecmez, hicbir yere yazilmaz.
+  remember: {
+    device: () => ipcRenderer.invoke('remember:device'),
+    get: () => ipcRenderer.invoke('remember:get'),
+    set: (veri) => ipcRenderer.invoke('remember:set', veri),
+    clear: () => ipcRenderer.invoke('remember:clear'),
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

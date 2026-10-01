@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Server, RefreshCw, Save, Info, FolderOpen, Shield, Database, Monitor } from 'lucide-react';
+import { Server, RefreshCw, Save, Info, FolderOpen, Shield, Database, Monitor, MonitorSmartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { api, dateTimeFmt } from '../lib/api.js';
+import { api, dateFmt, dateTimeFmt } from '../lib/api.js';
 import { PageHeader, Kpi } from '../components/Primitives.jsx';
 import { FormField, useFormState } from '../components/Form.jsx';
 
 const bridge = typeof window !== 'undefined' ? window.veltron : null;
 
 export default function Settings() {
-  const { user, serverUrl, connectTo, logout } = useAuth();
+  const { user, serverUrl, connectTo, logout, forgetDevice } = useAuth();
   const toast = useToast();
 
   const [url, setUrl] = useState(serverUrl);
@@ -17,10 +17,27 @@ export default function Settings() {
   const [testing, setTesting] = useState(false);
   const [health, setHealth] = useState(null);
   const [appInfo, setAppInfo] = useState(null);
+  // "Beni hatirla" durumu (1 Ekim 2026)
+  const [remembered, setRemembered] = useState(null);
+  const [unutuyor, setUnutuyor] = useState(false);
 
   useEffect(() => {
     if (bridge?.app?.info) bridge.app.info().then(setAppInfo).catch(() => {});
+    if (bridge?.remember?.get) bridge.remember.get().then(setRemembered).catch(() => {});
   }, []);
+
+  const cihazıUnut = async () => {
+    setUnutuyor(true);
+    try {
+      await forgetDevice();
+      setRemembered(null);
+      toast.success('Bu bilgisayar unutuldu', 'Bir sonraki açılışta şifre istenecek.');
+    } catch (err) {
+      toast.fromError(err, 'Silinemedi');
+    } finally {
+      setUnutuyor(false);
+    }
+  };
 
   const testConnection = async () => {
     setTesting(true);
@@ -145,6 +162,39 @@ export default function Settings() {
             <div className="alert info" style={{ marginTop: 14, marginBottom: 0 }}>
               Şifrenizi değiştirmek için sağ üstteki kullanıcı menüsünden "Şifre değiştir" seçeneğini kullanın.
             </div>
+
+            {/* ---- "Beni hatırla" durumu (1 Ekim 2026) ---- */}
+            {remembered ? (
+              <div
+                className="alert success"
+                style={{ marginTop: 14, marginBottom: 0, display: 'flex', gap: 8, alignItems: 'center' }}
+              >
+                <div style={{ flex: 1 }}>
+                  <strong>Bu bilgisayar hatırlanmış.</strong>{' '}
+                  <span className="text-dim">
+                    {remembered.username && <span className="mono">{remembered.username}</span>}
+                    {remembered.device && <> · {remembered.device}</>}
+                    {remembered.expiresAt && (
+                      <> · {dateFmt(remembered.expiresAt)} tarihine kadar</>
+                    )}
+                  </span>
+                </div>
+                <button
+                  className="btn btn-sm"
+                  onClick={cihazıUnut}
+                  disabled={unutuyor}
+                  title="Hatırlama jetonunu bu bilgisayardan siler"
+                >
+                  <MonitorSmartphone size={13} />
+                  {unutuyor ? 'Siliniyor...' : 'Bu cihazı unut'}
+                </button>
+              </div>
+            ) : (
+              <div className="field-hint" style={{ marginTop: 14 }}>
+                Bu bilgisayar hatırlanmamış. Giriş ekranındaki "Beni hatırla" kutusunu
+                işaretlerseniz 30 gün otomatik giriş yapılır (şifren kaydedilmez).
+              </div>
+            )}
 
             <button className="btn btn-block" style={{ marginTop: 14 }} onClick={logout}>
               Çıkış yap

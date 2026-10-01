@@ -25,6 +25,36 @@ export function AuthProvider({ children }) {
     toast.error('Oturum sonlandı', 'Lütfen tekrar giriş yapın.');
   }, [toast]);
 
+  /**
+   * "BENİ HATIRLA" — otomatik giriş
+   * ===============================
+   * Program acildiginda cihazda saklanan HATIRLEMA JETONU sunucuya sorulur.
+   * Gecerliyse 12 saatlik normal jeton doner, kullanici sifre yazmaz.
+   *
+   * ONEMLI: SIFRE SAKLANMAZ. Sadece jeton tutulur (bkz. electron/main.mjs).
+   * Jeton gecersizse SUNUCUDA da iptal edilir (iptal edilmis cihazlar
+   * bir daha otomatik giremez) ve giris ekrani sessizce acilir.
+   */
+  const autoLogin = useCallback(async () => {
+    if (!bridge?.remember) return false; // tarayicida calisiyorsa olmaz
+    try {
+      const kayit = await bridge.remember.get();
+      if (!kayit?.token) return false;
+
+      const device = (await bridge.remember.device().catch(() => '')) || '';
+      const res = await api.post('/auth/remember', { token: kayit.token, device });
+
+      setToken(res.token);
+      localStorage.setItem(TOKEN_KEY, res.token);
+      setUser(res.user);
+      return true;
+    } catch {
+      // Jeton gecersiz/suresi dolmus -> cihazda da temizle
+      bridge.remember?.clear?.();
+      return false;
+    }
+  }, []);
+
   // --- Uygulama acilisi: sunucu adresini ve varsa jetonu yukle -----------
   useEffect(() => {
     let cancelled = false;
@@ -79,30 +109,88 @@ export function AuthProvider({ children }) {
           localStorage.removeItem(TOKEN_KEY);
         }
       }
-      if (!cancelled) setStatus('ready');
+
+      // Oturum yok -> "Beni hatirla" ile otomatik giris dene.
+      if (!cancelled) {
+        const girildi = await autoLogin();
+        if (!cancelled) setStatus('ready');
+        if (!girildi) return;
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [handleAuthLost, retryKey]);
+  }, [handleAuthLost, retryKey, autoLogin]);
 
   // --- eylemler ---------------------------------------------------------
   const login = useCallback(
-    async (username, password) => {
-      const res = await api.post('/auth/login', { username: username.trim(), password });
+    async (username, password, remember = false) => {
+      const device = remember && bridge?.remember
+        ? (await bridge.remember.device().catch(() => '')) || ''
+        : '';
+
+      const res = await api.post('/auth/login', {
+        username: username.trim(),
+        password,
+        remember: !!remember,
+        ...(device ? { device } : {}),
+      });
+
       setToken(res.token);
       localStorage.setItem(TOKEN_KEY, res.token);
       setUser(res.user);
+
+      // Hatirlama jetonunu cihazda sakla (SIFRE DEGIL, sadece jeton)
+      if (bridge?.remember) {
+        if (remember && res.remember_token) {
+          await bridge.remember.set({
+            token: res.remember_token,
+            username: res.user?.username || username.trim(),
+            device,
+            expiresAt: res.remember_expires_at || null,
+          });
+        } else {
+          // Kutuyu isaretlemeden giris = bu cihaz hatirlanmaz
+          await bridge.remember.clear();
+        }
+      }
+
       return res.user;
     },
     []
   );
 
+  /**
+   * ÇIKIŞ YAP
+   * ---------
+   * Oturum jetonu SİLİNİR ve "beni hatırla" da SİLİNİR.
+   *
+   * Neden hatırlama da siliniyor: paylasilan bilgisayarda "Çıkış yap" deyip
+   * cihazı başkasına devretmek isteyen kullanici, program yeniden acildiginda
+   * OTOMATIK GIRMESI beklenmez. Güvenli varsayilan budur.
+   *
+   * Sadece cihazi unutmak (oturumu düşürmeden) icin: `forgetDevice()`.
+   */
   const logout = useCallback(() => {
     setToken(null);
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    bridge?.remember?.clear?.();
+  }, []);
+
+  /** "Bu cihazı unut" — hatırlama jetonunu hem yerel hem sunucuda iptal eder. */
+  const forgetDevice = useCallback(async () => {
+    if (!bridge?.remember) return;
+    try {
+      const kayit = await bridge.remember.get();
+      if (kayit?.token) {
+        // Sunucuda da iptal: bu cihaz jetonu bir daha kullanilamaz
+        await api.post('/auth/remember/revoke', { token: kayit.token }).catch(() => {});
+      }
+    } finally {
+      await bridge.remember.clear();
+    }
   }, []);
 
   /** Sunucu adresini degistirir ve yeni adrese baglanmayi dener. */
@@ -152,6 +240,10 @@ export function AuthProvider({ children }) {
       portal: user?.role === 'customer_progress' ? 'progress' : user?.role === 'customer_finance' ? 'finance' : null,
       login,
       logout,
+      /** "Bu cihazı unut" — hatırlama jetonunu iptal eder (Ayarlar). */
+      forgetDevice,
+      /** Bu cihazda hatırlama var mı? (Ayarlar ekranı için) */
+      rememberDevice: bridge?.remember ? bridge.remember.get() : Promise.resolve(null),
       connectTo,
       /** Sunucu yeniden acildiginda "Tekrar dene" ile baglanmak icin. */
       retry: () => setRetryKey((k) => k + 1),

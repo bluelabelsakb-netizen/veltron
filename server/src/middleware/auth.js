@@ -18,6 +18,45 @@ export function signToken(user) {
   );
 }
 
+/**
+ * HATIRLEME JETONU ("Beni hatirla")
+ * ================================
+ * SIFRE DEGIL, sadece jeton saklanir. 30 gun gecerli.
+ *
+ * Iki ek koruma:
+ *   - tv (token_version) aynen access token gibi: sifre degisince gecerliligini
+ *     kaybeder.
+ *   - typ: 'remember' -> access token olarak KULLANILAMAZ. Yani birileri
+ *     hatirlama jetonunu 12 saatlik erisim jetonu sanip API'de kullanmaya
+ *     calisirsa reddedilir.
+ */
+export const REMEMBER_TTL_DAYS = 30;
+
+export function signRememberToken(user, { jti, deviceName }) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+      tv: user.token_version ?? 1,
+      typ: 'remember',
+      jti,
+      dev: deviceName || null,
+    },
+    config.jwtSecret,
+    { expiresIn: `${REMEMBER_TTL_DAYS}d` }
+  );
+}
+
+/** Hatirlama jetonunu dogrular ve icindeki jti'yi dondurur. */
+export function verifyRememberToken(token) {
+  const payload = jwt.verify(token, config.jwtSecret);
+  if (payload.typ !== 'remember' || !payload.jti) {
+    throw new Error('wrong type');
+  }
+  return payload;
+}
+
 /** Authorization: Bearer <token> header'ini dogrular, req.user'i doldurur. */
 export function authenticate(req, _res, next) {
   const header = req.headers.authorization || '';
@@ -32,6 +71,12 @@ export function authenticate(req, _res, next) {
     payload = jwt.verify(token, config.jwtSecret);
   } catch {
     return next(unauthorized('Oturum gecersiz veya suresi dolmus. Tekrar giris yapin.'));
+  }
+
+  // "Beni hatirla" jetonu ERISIM jetonu yerine kullanilamaz. Ayri bir
+  // uctan (/auth/remember) otomatik giris yapabilir; API ucunda gecerli degildir.
+  if (payload.typ === 'remember') {
+    return next(unauthorized('Bu jeton normal API kullanimi icin gecerli degil.'));
   }
 
   // customer_id musteri rollerinde portalin hangi musteriye bagli oldugunu
