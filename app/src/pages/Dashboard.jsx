@@ -8,7 +8,7 @@ import {
   FolderKanban, CheckSquare, AlertTriangle, Receipt, Wallet, TrendingUp,
   Users, Building2, Package, CalendarClock, ArrowUpRight, FileText, RefreshCw,
 } from 'lucide-react';
-import { api, money, moneyOkunur, moneyShort, number, percent, dateFmt, statusLabel, statusTone, dueLabel, initials } from '../lib/api.js';
+import { api, money, moneyTam, moneyShort, number, percent, dateFmt, statusLabel, statusTone, dueLabel, initials } from '../lib/api.js';
 import { guzelEksen, eksenTickleri } from '../lib/chartScale.js';
 import { PageHeader, Kpi, KpiMoney, EmptyState, Loading, Tip } from '../components/Primitives.jsx';
 import { StatusBadge } from '../components/StatusBadge.jsx';
@@ -182,7 +182,7 @@ export default function Dashboard() {
         />
         <Kpi
           label="Bu ay faturalanan"
-          value={moneyOkunur(k.invoiced_month)}
+          value={moneyTam(k.invoiced_month)}
           color="#06b6d4"
           icon={Receipt}
           sub={`Toplam ${money(k.invoiced_total)}`}
@@ -190,7 +190,7 @@ export default function Dashboard() {
         />
         <Kpi
           label="Bu ay tahsilat"
-          value={moneyOkunur(k.paid_month)}
+          value={moneyTam(k.paid_month)}
           color="#22c55e"
           icon={Wallet}
           sub={`Toplam ${money(k.paid_total)}`}

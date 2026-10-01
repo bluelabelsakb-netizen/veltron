@@ -221,6 +221,35 @@ export const moneyOkunur = (value, sembol = '₺') => {
 export const number = (value) => Number(value || 0).toLocaleString(TRY_LOCALE);
 
 /**
+ * TAM RAKAM + KURUS KURALI
+ * =========================
+ * `moneyOkunur` 10.000'in ustunu "32 bin" diye kisaltir. Panelde kartlar
+ * yan yana durunca tutarsiz gorunuyordu: birinde "32 bin ₺", digerinde
+ * "7.500,00 ₺". Kullanici tercihi: HER ZAMAN tam rakam.
+ *
+ * Kurus kurali:
+ *   32000     -> "32.000 ₺"      (kurus yok -> ",00" YAZILMAZ)
+ *   32000.24  -> "32.000,24 ₺"   (kurus var  -> yazilir)
+ *   0         -> "0 ₺"
+ * Negatifte isaret basa gelmez: "-1.234,56 ₺" okunur, "₺-1.234,56" degil.
+ *
+ * NOT: `money()` DEGISTIRILMEDI. O her yerde 2 ondalik yazar ve belgelerde
+ * (fatura, Excel, bordro) bu dogru. Bu sadece ekran gorunumu icindir.
+ */
+export const moneyTam = (value, sembol = '₺') => {
+  const n = Number(value || 0);
+  // 0,005 altini "yuvarlama payi" sayiyoruz: 32000.00 -> kuruş yok.
+  const kuruşVar = Math.abs(n % 1) > 0.005;
+  const bicim = new Intl.NumberFormat(TRY_LOCALE, {
+    minimumFractionDigits: kuruşVar ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+  const yazi = bicim.format(n);
+  if (n < 0) return `-${yazi.replace('-', '')} ${sembol}`;
+  return `${yazi} ${sembol}`;
+};
+
+/**
  * YUZDE — Turkce ondalik ayraci ile.
  *
  * API marji "72.9" (nokta) dondurur; dogrudan yazilirsa "%72.9" cikar ve
