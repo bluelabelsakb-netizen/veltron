@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Server, RefreshCw, Save, Info, FolderOpen, Shield, Database, Monitor,
-  MonitorSmartphone, Send, AlertTriangle,
+  MonitorSmartphone, Send, AlertTriangle, Eye,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -31,6 +31,11 @@ export default function Settings() {
   const [testKime, setTestKime] = useState('');
   const [testGonderiliyor, setTestGonderiliyor] = useState(false);
   const [onizlemeYapiyor, setOnizlemeYapiyor] = useState(false);
+
+  // Görünüm ayarı — üst çubukta sayfa adı (2 Ekim 2026, geri alma düğmesi)
+  const [ustCubukBaslik, setUstCubukBaslik] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('veltron.ustCubukBaslik') === '1'
+  );
 
   useEffect(() => {
     if (bridge?.app?.info) bridge.app.info().then(setAppInfo).catch(() => {});
@@ -398,6 +403,43 @@ export default function Settings() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ---- Görünüm (2 Ekim 2026) ---- */}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="card-head">
+          <Eye size={16} style={{ color: 'var(--primary)' }} />
+          <h3>Görünüm</h3>
+        </div>
+        <div className="card-body">
+          <label
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: 9,
+              cursor: 'pointer', userSelect: 'none',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={ustCubukBaslik}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setUstCubukBaslik(v);
+                // Layout bu değeri dinleyip anında uygular
+                localStorage.setItem('veltron.ustCubukBaslik', v ? '1' : '0');
+                window.dispatchEvent(new CustomEvent('veltron:gorunum'));
+              }}
+              style={{ width: 15, height: 15, marginTop: 2, accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+              <strong>Üst çubukta sayfa adı göster</strong>
+              <span className="text-dim" style={{ display: 'block', marginTop: 2 }}>
+                Kapalıyken sayfa adı yalnızca sol menüde ve sayfa başlığında
+                görünür — üç kere yazılıp birbirine yapışık görünmesin.
+                Açıkken üst çubukta da görünür (eski görünüm).
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

@@ -256,19 +256,23 @@ a:hover { text-decoration: underline; }
 
 .main { grid-area: main; overflow-y: auto; overflow-x: hidden; }
 
-/* İÇERİK BOŞLUĞU (2 Ekim 2026 — kullanıcı isteği)
- * ------------------------------------------------
- * Sayfa üst çubuğu (header) hem de .page-head kendi başlığını gösterir.
- * İş Emirleri gibi sayfalarda ikisi de aynı metni yazıyordu ("İş Emirleri"
- * üstte, "İş Emirleri" hemen altta) ve aralarında yalnız 20px vardı —
- * yapışık görünüyordu.
+/* İÇERİK BOŞLUĞU — TEK KAYNAK (2 Ekim 2026)
+ * --------------------------------------------
+ * Sorun: iç boşluk `.page` sarmalayıcısındaydı ama o sarmalayıcıyı
+ * yalnızca 5 sayfa kullanıyordu. Görevler, İş Emirleri, Müşteriler gibi
+ * sayfalar boşluğu hiç almıyor, başlık sol kenara yapışık duruyordu.
  *
- * Yapılan: dikey boşluk açıldı ve hiyerarşi netleştirildi.
- *   .header-title  -> küçük ve soluk  (kırıntı/yer imi gibi)
- *   .page-head h1  -> büyük ve belirgin (asıl başlık)
- * Böylece ikisi "tekrarlanan hata" gibi değil, "kırıntı + başlık" gibi okunur.
+ * Çözüm: boşluk ÇERÇEVEYECE taşındı (.main-inner). Artık hangi sayfa açılırsa
+ * açılsın aynı nefes payını alır; sayfalara sarmalayıcı eklemek gerekmez.
+ *   .page hâlâ duruyor -> yalnızca max-width (geniş ekran sınırı) için,
+ *   çift boşluk oluşmaması için padding'i sıfırlandı.
  */
-.page { padding: 26px 26px 48px; max-width: 1680px; }
+.main-inner {
+  padding: 26px 26px 48px;
+  max-width: 1680px;
+}
+
+.page { max-width: 1680px; }
 
 .page-head {
   display: flex; align-items: flex-start; gap: 16px;

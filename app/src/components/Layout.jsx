@@ -178,6 +178,35 @@ export function Layout() {
 
   const title = TITLES[location.pathname] || 'Veltron';
 
+  /**
+   * ÜST ÇUBUKTA SAYFA ADI GÖSTERİLSİN Mİ?  (2 Ekim 2026)
+   * =================================================
+   * Varsayılan: KAPALI. Sayfa adı üç kere yazılıyordu (sol menü, üst
+   * çubuk, sayfa içi başlık) ve üst çubuk yüzünden başlık yapışık duruyordu.
+   *
+   * ⛔ Bu ayar KALICI GERİ ALMA DÜĞMESİYLE geldi: Ayarlar > Görünüm >
+   *   "Üst çubukta sayfa adı" — aç/kapat. Kullanıcı beğenmezse tek tıkla
+   *   eski hâline döner, kod değişikliği gerekmez.
+   *
+   * localStorage'da tutulur (bilgisayara özel, sunucuya gitmez).
+   */
+  const [ustCubukBaslik, setUstCubukBaslik] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('veltron.ustCubukBaslik') === '1';
+  });
+
+  // Ayarlar'da kutu değiştirilince sayfayı yenilemeden uygulansın.
+  useEffect(() => {
+    const dinle = () =>
+      setUstCubukBaslik(localStorage.getItem('veltron.ustCubukBaslik') === '1');
+    window.addEventListener('veltron:gorunum', dinle);
+    window.addEventListener('storage', dinle);
+    return () => {
+      window.removeEventListener('veltron:gorunum', dinle);
+      window.removeEventListener('storage', dinle);
+    };
+  }, []);
+
   const visibleGroups = useMemo(
     () =>
       NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdmin) })).filter(
@@ -240,9 +269,12 @@ export function Layout() {
       </aside>
 
       <header className="header">
-        <div>
-          <div className="header-title">{title}</div>
-        </div>
+        {/* ⛔ 2 Ekim 2026 — başlık üst çubuktan kaldırıldı: sayfa adı üç kere
+            yazılıyordu (sol menü + üst çubuk + sayfa içi başlık) ve başlık
+            üstüne yapışık duruyordu.
+            ⛔ Ayarlar > Görünüm > "Üst çubukta sayfa adı" ile geri
+            açılabilir — kullanıcı beğenmezse tek tıkla eski hâline döner. */}
+        {ustCubukBaslik ? <div className="header-title">{title}</div> : null}
 
         <div className="header-spacer" />
 
@@ -336,7 +368,16 @@ export function Layout() {
       </header>
 
       <main className="main">
-        <Outlet />
+        {/* ⛔ 2 Ekim 2026 — iç boşluk BURAYA taşındı.
+            Sorun: `.page` sarmalayıcısını yalnızca 5 sayfa kullanıyordu
+            (Dashboard, Settings, CompanyProfile, ActivityLog + 1). Geri kalan
+            23 sayfa (Görevler, İş Emirleri, Müşteriler...) iç boşluğu hiç
+            almıyordu -> başlık sol kenara YAPIŞIK duruyordu.
+            Boşluğu sayfaya değil ÇERÇEVEYE koyunca her sayfa kendiliğinden
+            aynı nefes payını alır; sarmalayıcı eklemek gerekmez. */}
+        <div className="main-inner">
+          <Outlet />
+        </div>
       </main>
 
       <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} onDone={() => logout()} toast={toast} />
