@@ -33,6 +33,8 @@ const FirstRunWizard = lazy(() => import('./pages/FirstRunWizard.jsx'));
 const InvoiceImport = lazy(() => import('./pages/InvoiceImport.jsx'));
 const Support = lazy(() => import('./pages/Support.jsx'));
 const EmployeeImport = lazy(() => import('./pages/EmployeeImport.jsx'));
+const CustomerImport = lazy(() => import('./pages/CustomerImport.jsx'));
+const ProductImport = lazy(() => import('./pages/ProductImport.jsx'));
 const ExchangeRates = lazy(() => import('./pages/ExchangeRates.jsx'));
 const PasswordRequests = lazy(() => import('./pages/PasswordRequests.jsx'));
 const Taxes = lazy(() => import('./pages/Taxes.jsx'));
@@ -144,6 +146,8 @@ export default function App() {
           <Route path="/faturalar" element={<Invoices />} />
           <Route path="/fatura-aktar" element={<InvoiceImport />} />
           <Route path="/calisan-aktar" element={<EmployeeImport />} />
+          <Route path="/musteri-aktar" element={<CustomerImport />} />
+          <Route path="/urun-aktar" element={<ProductImport />} />
           <Route path="/kar" element={<Profit />} />
           <Route path="/calisanlar" element={<Employees />} />
           <Route path="/urunler" element={<Products />} />
