@@ -37,7 +37,7 @@
   },
   "build": {
     "appId": "com.veltron.takip",
-    "productName": "Veltron Takip",
+    "productName": "Veltron",
     "copyright": "© 2026 Veltron",
     "publish": [
       {
@@ -82,7 +82,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
-      "shortcutName": "Veltron Takip",
+      "shortcutName": "Veltron",
       "include": "../build/installer.nsh",
       "deleteAppDataOnUninstall": false
     }

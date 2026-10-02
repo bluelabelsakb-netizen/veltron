@@ -81,12 +81,12 @@
 
   KisayolEvet:
     DetailPrint "Masaüstü kısayolu oluşturuluyor..."
-    CreateShortCut "$DESKTOP\Veltron Takip.lnk" "$INSTDIR\Veltron Takip.exe"
+    CreateShortCut "$DESKTOP\Veltron.lnk" "$INSTDIR\Veltron.exe"
     Goto KisayolBitti
 
   KisayolHayir:
     DetailPrint "Masaüstü kısayolu oluşturulmadi (kullanici tercihi)."
-    Delete "$DESKTOP\Veltron Takip.lnk"
+    Delete "$DESKTOP\Veltron.lnk"
 
   KisayolBitti:
   DetailPrint "Kurulum tamamlandi."
@@ -98,7 +98,7 @@
   nsExec::ExecToLog 'schtasks /End /TN "Veltron Sunucu"'
   nsExec::ExecToLog 'schtasks /Delete /TN "Veltron Sunucu" /F'
   ; ---- Masaüstü kısayolunu kaldır -------------------------------------
-  Delete "$DESKTOP\Veltron Takip.lnk"
+  Delete "$DESKTOP\Veltron.lnk"
 !macroend
 
 !macro customFinishPage

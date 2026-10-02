@@ -78,7 +78,7 @@ function createWindow() {
     show: false,
     frame: false, // ozellestirilmis baslik cubugu (Layout.jsx)
     backgroundColor: '#0d1117',
-    title: 'Veltron Takip',
+    title: 'Veltron',
     icon: path.join(here, 'icon.png'),
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),

@@ -136,6 +136,17 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 
+/* ⛔ 2 Ekim 2026: ARAYÜZDEKİ LOGO DEĞİŞTİRİLMEDİ.
+ *
+ * Denendi: .brand-mark'ı PNG'ye çevirmek, atom ikonu arayüzde de göstermek.
+ * Vazgeçildi — arayüzün bozulmaması için. Aşağıdaki hâli olduğu gibi
+ * duruyor: harf "V", mavi-mor gradyan (--primary / --purple).
+ *
+ * Marka rengi değişikliği YALNIZCA app/electron/icon.png dosyasında:
+ * görev çubuğu, masaüstü simgesi, pencere başlığı, kurulum paketi.
+ * ⛔ --primary 24 yerde kullanılıyor (buton, link, aktif menü, sekme);
+ *    koyulaştırılırsa arayüz okunmaz olurdu. O yüzden dokunulmadı.
+ */
 .brand-mark {
   width: 30px; height: 30px;
   border-radius: 7px;
