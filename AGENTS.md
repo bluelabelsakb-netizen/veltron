@@ -227,24 +227,39 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 16. **PNG üretirken parça yapısı:** `[4 bayt uzunluk][4 bayt tip][veri][4 bayt CRC]`
     ve CRC **yalnızca tip+veri** üzerinden hesaplanır (uzunluk dahil değil).
     Uzunluk/tip yazılmadan çıkan PNG sessizce bozuktur.
-17. **Hatırlama jetonu API'de KULLANILAMAZ.** `typ: 'remember'` kontrolü
-    `authenticate`'de var. Bu kaldırılırsa 30 günlük jeton normal erişim
-    jetonuna dönüşür.
+18. **Sunucu testleri ASLA gerçek veritabanına bağlanmaz.** `tum-testler.mjs`
+    kendi kopyasını açar ve `process.env.DB_FILE`'ı zorlar — dışarıdan yanlış
+    verilse bile gerçek DB kullanılamaz. (2 Ekim 2026'da DB_FILE ayarlanmadan
+    koşucu çalıştırıldı; portal/demo testleri GERÇEK DB'ye kayıt açtı:
+    müşteri 28→39, fatura 23→32, kullanıcı 16→28. Yedekten temizlendi.)
+19. **`LIKE` ile silme yaparken joker kullanma.** SQL'de `_` tek karakterlik
+    jokerdir. `username LIKE '%_mali'` deseni **gerçek** `vuruskan-mali`
+    hesabını (müşteri portalı) eşleştirdi ve sildi. Joker kullanacaksan
+    yanına koruma listesi koy (`KORUNAN_ADLAR`).
+20. **Kopya alırken WAL ve SHM de kopyalanmalı.** `veltron.db` son yazmaları
+    içermez; onlar `-wal` dosyasındadır. Atlanırsa kopya eksik veri verir.
+21. **Veri temizliği yapmadan önce yedek al ve gerçek hesapları doğrula.**
+    Silme sonrası `SELECT username, role FROM users` ile korunması gereken
+    hesapların yerinde olduğunu teyit et.
 
 ---
 
 ## 5. Testler
 
-**Sunucu testleri — 10 dosya, 459 test:**
+**Sunucu testleri — 11 dosya, 490 kontrol:**
 
 ```powershell
 cd server
-npm test          # koşucu: sunucuyu kendi başlatır, 10 dosyayı sırayla koşar
+npm test          # koşucu: test KOPYASINI kendisi açar, 11 dosyayı koşar
 ```
 
 Dosyalar: `smoke` (57) · `payroll` (69) · `portal` (119) · `export` (31) ·
 `attachments` (23) · `demo` (24) · `import` (34) · `passwordReset` (32) ·
-`taxes` (39) · `remember` (31)
+`taxes` (39) · `remember` (31) · `faturaPosta` (62)
+
+⛔ **Gerçek veritabanı koruması:** koşucu `veltron-test.db` kopyasını kendisi
+açar (WAL + SHM dahil) ve `process.env.DB_FILE`'ı zorlar. Dışarıdan yanlış
+verilse bile gerçek DB'ye bağlanamaz. Bkz. Tuzak 18-21.
 
 **Arayüz testleri — proje kökünden, 5 dosya, 168 test:**
 
@@ -402,6 +417,40 @@ rotası `/gonderim-durumu` gibi sabit yolları da yakalar, `"id=NaN"` arar ve
 **Kullanılmayan dosyalar:** `pdfAltyapi.js` ve `faturaPdf.js` (elle kodlanmış
 PDF denemesi). Tasarım koda gömüldüğü ve xref ofsetleri bozuk çıktığı için
 bırakıldı. Referans için duruyor, **kullanma**.
+
+---
+
+## 5e. Excel'den İçe Aktarma (2 Ekim 2026)
+
+Ortak altyapı: `server/src/utils/excelAktarma.js` — dosya okuma, başlık
+normalleştirme, sütun eşleştirme, tarih/sayı çevirme, şablon üretimi,
+önizleme→commit akışı.
+
+| Aktarım | Sunucu ucu | Durum |
+|---|---|---|
+| **Çalışan** | `routes/importEmployee.js` · `/import/employee/*` | ✅ + ekran |
+| **Müşteri** | `routes/importMusteri.js` · `/import/customer/*` | ✅ uç hazır, ekran yok |
+| **Ürün** | `routes/importUrun.js` · `/import/product/*` | ✅ uç hazır, ekran yok |
+| Fatura | `routes/import.js` · `/import/invoice/*` | ✅ mevcut |
+
+Üç uç da aynı deseni kullanır: `{preview, commit, template}`.
+`preview` **hiçbir kayıt yazmaz**.
+
+**Tekilleştirme (mükerrer önleme)**
+
+| Varlık | Birincil | Yedek |
+|---|---|---|
+| Çalışan | TC Kimlik No | Ad + Telefon |
+| Müşteri | Vergi No (VKN 10 / TC 11 hane) | Ünvan |
+| Ürün | Stok Kodu (SKU) | Ad + Birim |
+
+**Doğrulama:** Hatalı satır **kaydedilmez**, önizlemede işaretlenir.
+Çalışan/Müşteri/Ürün için: ad/ünvan boş, geçersiz TC, geçersiz e-posta,
+negatif stok/fiyat.
+
+**⛔ Ürün fiyat/stok ezilmez.** Güncellemede `min_stock` ve `unit_price`
+`COALESCE` ile korunur — firma listesindeki fiyat bayinin kendi fiyatı
+olabilir, sessizce ezmek kâr marjını bozar. Boşsa mevcut değer kalır.
 
 ---
 

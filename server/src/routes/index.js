@@ -18,6 +18,8 @@ import companyRoutes from './company.js';
 import faturaPostaRoutes from './faturaPosta.js';
 import updateRoutes from './update.js';
 import importEmployeeRoutes from './importEmployee.js';
+import importMusteriRoutes from './importMusteri.js';
+import importUrunRoutes from './importUrun.js';
 import workOrderRoutes from './workOrders.js';
 import subcontractorRoutes from './subcontractors.js';
 import payrollRoutes from './payroll.js';
@@ -94,7 +96,12 @@ router.use('/invoices', invoiceRoutes);
 router.use('/update', updateRoutes);
 // Personel Excel iceri aktarma (2 Ekim 2026). Fatura aktarimiyla ayni akis:
 // preview (kayit yazmaz) -> commit (kaydeder).
+// Excel iceri aktarma: /import/{employee,customer,product}/{preview,commit,template}
+// ⛔ importEmployeeRoutes ONCE gelmeli: ic catismalari onlemek icin
+//    (hepsi /import altinda ayri dosyalar).
 router.use('/import', importEmployeeRoutes);
+router.use('/import', importMusteriRoutes);
+router.use('/import', importUrunRoutes);
 router.use('/products', productRoutes);
 router.use('/stock', stockRoutes);
 router.use('/users', userRoutes);

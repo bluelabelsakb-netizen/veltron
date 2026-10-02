@@ -18,10 +18,54 @@
 import 'dotenv/config'; // .env'deki ADMIN_PASSWORD'yi okuyabilmek icin
 import { spawn } from 'node:child_process';
 import { setTimeout as bekle } from 'node:timers/promises';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const KOK = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * ⛔⛔ GÜVENLİK AĞI — GERÇEK VERİTABANI KORUMASI
+ * ==================================================
+ * Bu koşucu testleri GERÇEK VERİTABANINA BAĞLAMAZ.
+ *
+ * NASIL BOZULDU (2 Ekim 2026): `DB_FILE` ortam değişkeni ayarlanmadan
+ * koşucu çalıştırıldığında sunucu `server/data/veltron.db` dosyasını
+ * açtı. Portal ve demo testleri müşteri/kullanıcı/fatura kaydı açtı ve
+ * HEPSİ gerçek veritabanına yazıldı:
+ *   customers 39 → PortalTest_*, DemoTesti_*, LisansTesti_* ile doldu
+ *   invoices  32 → TEST-FTR-* kayıtları
+ *   users     28 → test_portal_* hesapları
+ * Temizlikte ayrıca bir hata yapıldı (LIKE '%_mali' jokeri) ve gerçek
+ * bir müşteri hesabı (vuruskan-mali) silindi; yedekten geri alındı.
+ *
+ * ŞU AN: koşucu KENDİSİ geçici bir kopya açar ve onunla çalışır.
+ * Gerçek veritabanına hiç dokunulamaz — DB_FILE yanlışlıkla verilse bile.
+ */
+const GERCEK_DB = path.join(KOK, 'data', 'veltron.db');
+const TEST_DB = path.join(KOK, 'data', 'veltron-test.db');
+
+function testVeritabaniHazirla() {
+  fs.rmSync(TEST_DB, { force: true });
+  fs.rmSync(`${TEST_DB}-wal`, { force: true });
+  fs.rmSync(`${TEST_DB}-shm`, { force: true });
+  if (!fs.existsSync(GERCEK_DB)) {
+    console.error(`[HATA] Gercek veritabani bulunamadi: ${GERCEK_DB}`);
+    process.exit(1);
+  }
+  // WAL ve SHM de kopyalanmali: veltron.db'de son yazmalar ana dosyada
+  // degil, WAL'da durur. Atlanirsa kopya ESKI veri icerir.
+  for (const ek of ['', '-wal', '-shm']) {
+    const kaynak = `${GERCEK_DB}${ek}`;
+    if (fs.existsSync(kaynak)) fs.copyFileSync(kaynak, `${TEST_DB}${ek}`);
+  }
+  // Testler icin zorla: disaridan DB_FILE gelse de bu gecerli olur
+  process.env.DB_FILE = TEST_DB;
+  return TEST_DB;
+}
+
+const KULLANILACAK_DB = testVeritabaniHazirla();
 
 const DOSYALAR = [
   'smoke.mjs',
@@ -77,6 +121,8 @@ console.log('='.repeat(64));
 console.log('');
 
 console.log('[0] Sunucu baslatiliyor...');
+console.log(`    Test veritabani: ${KULLANILACAK_DB}`);
+console.log(`    Gercek veritabani KORUNUYOR: ${GERCEK_DB}`);
 const sunucu = spawn(process.execPath, [path.join(KOK, 'src', 'index.js')], {
   cwd: KOK,
   stdio: 'ignore',
