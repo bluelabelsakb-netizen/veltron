@@ -76,7 +76,7 @@ export function Login({ serverDown = false }) {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="brand-mark">V</div>
+          <img className="brand-mark" src="./veltron-ikon.png" alt="" />
           <h1>VELTRON</h1>
           <p>İş Takip ve Yönetim Sistemi</p>
         </div>
