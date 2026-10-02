@@ -241,6 +241,50 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 21. **Veri temizliği yapmadan önce yedek al ve gerçek hesapları doğrula.**
     Silme sonrası `SELECT username, role FROM users` ile korunması gereken
     hesapların yerinde olduğunu teyit et.
+22. **Ekran görüntüsü için `PrintWindow` KULLANMA.** PowerShell'in
+    `PrintWindow` yöntemi **eski kareyi** döndürüyor; aynı sayfada JS ile
+    ölçüldüğünde değerler doğru çıktı. 2 Ekim'de giriş ekranı ikonu
+    "değişmemiş" sanıldı, oysa kod baştan doğruymuş — ölçüm aracı yanlıştı.
+    Gerçek yakalama: Electron'un kendi `capturePage()`'ini çağıran küçük bir
+    betik (`BrowserWindow` → `loadFile(app/dist/index.html)` → `capturePage`).
+    Boyut şüphesinde `executeJavaScript` ile `getBoundingClientRect()` ölç.
+
+---
+
+## 5f. Marka (2 Ekim 2026)
+
+**İsim: Veltron.** "Veltron Takip" olarak kısaltıldı.
+
+| Nerede | Değer |
+|---|---|
+| Pencere başlığı, sekme başlığı | `Veltron` |
+| exe adı | `Veltron.exe` |
+| Kurulum dosyası | `Veltron-Kurulum-${version}.exe` |
+| Masaüstü kısayolu | `Veltron.lnk` |
+| `appId` | `com.veltron.takip` — **değiştirme**: uygulama kimliği |
+
+⛔ **`--primary` rengini değiştirme.** 24 yerde kullanılıyor (buton, link,
+aktif menü çubuğu, sayaç rozeti, sekme). Koyulaştırılırsa koyu zeminde
+butonlar kaybolur. Marka rengi değişikliği **yalnızca ikon dosyasında**
+(`app/electron/icon.png`) yapılır.
+
+**Logo: antrasit atom**
+
+```
+Zemin     #1e293b → #475569 (antrasit gradyan)
+Atom      3 elips yörünge (0°/60°/120°), her birinde 1 elektron
+Çekirdek  beyaz "V"
+Üretici   tools-src/ikon-uret.mjs  ·  ton karşılaştırma: ikon-tonlari.mjs
+```
+
+- ⛔ **Electron'un logosunun kopyası değil.** Electron da 3 yörüngeli atom
+  kullanır; bu yüzden çekirdeğe "V" kondu — hem atom hissi hem marka.
+  Boş elektron logosu görününce "bu uygulama mı?" karışıklığı olur.
+- **Program ikonu** (`icon.png`): görev çubuğu, masaüstü simgesi, exe gömülü
+- **Giriş ekranı** (`Login.jsx` + `app/public/`): 60×60 px
+  - ⛔ 46px denendi, **vazgeçildi**: yörüngeler iç içe geçiyor, "V" okunmuyordu
+  - ⛔ **Sol menüdeki 30px kutu HARF "V" OLARAK KALDI**: 30px'te atom
+    kesinlikle bulanıklaşıyor. PNG denendi, vazgeçildi.
 
 ---
 
