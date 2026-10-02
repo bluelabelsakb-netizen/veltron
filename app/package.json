@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Veltron Masaüstü İstemci",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluelabelsakb-netizen/veltron.git"
+  },
   "author": {
     "name": "Veltron",
     "email": "info@veltron.local"
@@ -35,6 +39,14 @@
     "appId": "com.veltron.takip",
     "productName": "Veltron Takip",
     "copyright": "© 2026 Veltron",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bluelabelsakb-netizen",
+        "repo": "veltron",
+        "releaseType": "release"
+      }
+    ],
     "directories": {
       "output": "release"
     },
@@ -68,7 +80,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
       "shortcutName": "Veltron Takip",
       "include": "../build/installer.nsh",

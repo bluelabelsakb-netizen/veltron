@@ -235,6 +235,22 @@ ipcMain.handle('app:export-text', async (_e, { defaultName, content }) => {
 
 ipcMain.handle('app:open-data-folder', () => shell.openPath(app.getPath('documents')));
 
+/**
+ * Dış bağlantıyı varsayılan tarayıcıda aç (güncelleme indirme sayfası).
+ *
+ * ⛔ GÜVENLİK: Yalnızca https:// kabul edilir. `file://`, `javascript:`
+ * gibi protokoller reddedilir — aksi halde renderer tarafı keyfi
+ * protokol tetikleyebilirdi.
+ */
+ipcMain.handle('app:open-external', async (_e, url) => {
+  const s = String(url || '');
+  if (!/^https:\/\//i.test(s)) {
+    return { ok: false, error: 'Yalnizca https adresleri acilabilir.' };
+  }
+  await shell.openExternal(s);
+  return { ok: true };
+});
+
 // ---------------------------------------------------------- uygulama ----
 app.whenReady().then(() => {
   registerAppProtocol();

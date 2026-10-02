@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('veltron', {
     info: () => ipcRenderer.invoke('app:info'),
     exportText: (payload) => ipcRenderer.invoke('app:export-text', payload),
     openDataFolder: () => ipcRenderer.invoke('app:open-data-folder'),
+    // Güncelleme sayfasını varsayılan tarayıcıda aç (2 Ekim 2026).
+    // ⛔ Yalnızca https adresleri — keyfi protokol açılmasın.
+    openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   },
   platform: process.platform,
 });

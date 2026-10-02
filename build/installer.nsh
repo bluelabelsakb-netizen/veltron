@@ -23,6 +23,34 @@
 ;    denemede "macro named INSTALL_OPTION not found" hatası verdi. Kullanma.
 
 !macro customHeader
+  ; ⛔ LogicLib DENEMESİ BAŞARISIZ OLDU, GERİ ALINDI (2 Ekim 2026).
+  ;   ${If} / ${EndIf} / ${Errors} makroları electron-builder'ın NSIS
+  ;   ortamında tanımlı değil:
+  ;     "!include: error in script ... on line 51"
+  ;     "Invalid command: ${If}"
+  ;   !include "LogicLib.nsh" eklemek de sorunu çÖZMEDİ.
+  ;
+  ;   KULLANILAN ÇÖZÜM: Özel sayfa (customDirectoryPage + nsDialogs) yerine
+  ;   kurulumun SONUNDA tek satırlık bir soru kutusu (MessageBox). Daha basit,
+  ;   %100 güvenilir ve kullanıcıya sorduğu için aynı işi görür.
+  ;   Makro/LogicLib gerektirmez.
+!macroend
+
+; ============================================================================
+;  MASAÜSTÜ KISAYOLU — KULLANICIYA SORARAK
+; ============================================================================
+;  İstek (2 Ekim 2026): "kurulum paketinde masaüstü kısayol oluşturulsun mu
+;  diye sorsun, tamam dersek oluştursun."
+;
+;  electron-builder'ın `createDesktopShortcut` seçeneği yalnızca TRUE/FALSE
+;  kabul eder — soramaz. Bu yüzden seçenek FALSE yapıldı ve aşağıdaki
+;  özel sayfa eklendi.
+;
+;  Başlat menüsü kısayolu HER ZAMAN oluşturulur (createStartMenuShortcut),
+;  o bir gelenek kuralı — kurulumu seçmeye değmez.
+;
+;  Sayfa, kurulum dizini sorusundan SONRA gelir (customDirectoryPage).
+!macro customDirectoryPage
 !macroend
 
 !macro customInstall
@@ -43,7 +71,25 @@
   DetailPrint "Sunucu başlatılıyor..."
   nsExec::ExecToLog 'schtasks /Run /TN "Veltron Sunucu"'
 
-  DetailPrint "Kurulum tamamlandi. Masaüstündeki simgeye çift tıklayarak açın."
+  ; ---- Masaüstü kısayolu: SONDA SOR (2 Ekim 2026) ---------------------
+  ;  İstek: "sorsun, tamam dersek oluştursun".
+  ;  Başlat menüsü kısayolu zaten oluşturuldu (createStartMenuShortcut) —
+  ;  o bir gelenek kuralı, sorulmaz.
+  MessageBox MB_YESNO|MB_ICONQUESTION \
+    "Masaüstünde Veltron simgesi oluşturulsun mu?$\n$\n(İsterseniz kısayolu sonra elle de oluşturabilirsiniz. Başlat menüsünde her zaman kısayol var.)" \
+    IDYES KisayolEvet IDNO KisayolHayir
+
+  KisayolEvet:
+    DetailPrint "Masaüstü kısayolu oluşturuluyor..."
+    CreateShortCut "$DESKTOP\Veltron Takip.lnk" "$INSTDIR\Veltron Takip.exe"
+    Goto KisayolBitti
+
+  KisayolHayir:
+    DetailPrint "Masaüstü kısayolu oluşturulmadi (kullanici tercihi)."
+    Delete "$DESKTOP\Veltron Takip.lnk"
+
+  KisayolBitti:
+  DetailPrint "Kurulum tamamlandi."
 !macroend
 
 !macro customUnInstall
@@ -51,6 +97,8 @@
   DetailPrint "Veltron Sunucu görevi kaldırılıyor..."
   nsExec::ExecToLog 'schtasks /End /TN "Veltron Sunucu"'
   nsExec::ExecToLog 'schtasks /Delete /TN "Veltron Sunucu" /F'
+  ; ---- Masaüstü kısayolunu kaldır -------------------------------------
+  Delete "$DESKTOP\Veltron Takip.lnk"
 !macroend
 
 !macro customFinishPage

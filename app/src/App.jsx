@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { useCompany } from './context/CompanyContext.jsx';
 import { Layout } from './components/Layout.jsx';
+import UpdateBanner, { useUpdateCheck } from './components/UpdateBanner.jsx';
 import { Login } from './pages/Login.jsx';
 import MustChangePassword from './pages/MustChangePassword.jsx';
 import { Loading } from './components/Primitives.jsx';
@@ -68,6 +69,10 @@ export default function App() {
   const { company, loading: companyLoading, reload: reloadCompany, firstRunDone } = useCompany();
   const [sihirbazBasladi, setSihirbazBasladi] = useState(false);
   const [sihirbazKapandi, setSihirbazKapandi] = useState(false);
+
+  // Güncelleme kontrolü — yalnızca giriş yapılmış, şirket içi kullanıcılarda.
+  // Müşteri portalinde ve giriş ekranında gösterilmez.
+  const guncelleme = useUpdateCheck(!!user && !isCustomer && status === 'ready');
 
   // Ilk kurulum: firma profili bos ise sihirbaz acilir.
   const profilBos = !!user && !isCustomer && !companyLoading && !firstRunDone?.();
@@ -156,6 +161,16 @@ export default function App() {
         </Route>
       </Routes>
       </Suspense>
+
+      {/* Güncelleme bildirimi (2 Ekim 2026) — açılıştan hemen sonra sorar.
+          Kullanıcı "Eski sürümden devam et" derse hiçbir şey olmaz. */}
+      <UpdateBanner
+        visible={guncelleme.visible}
+        veri={guncelleme.veri}
+        indiriliyor={guncelleme.indiriliyor}
+        indir={guncelleme.indir}
+        onKapat={guncelleme.kapat}
+      />
     </>
   );
 }
