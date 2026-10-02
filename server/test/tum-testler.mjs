@@ -113,6 +113,7 @@ const DOSYALAR = [
   'faturaPosta.test.mjs',
   'hataGunlugu.test.mjs',
   'paketlenebilirlik.test.mjs',
+  'aktarmaEkran.test.mjs',
 ];
 
 /**
