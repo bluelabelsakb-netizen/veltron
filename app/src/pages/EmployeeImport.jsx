@@ -374,14 +374,13 @@ export default function EmployeeImport() {
         onConfirm={kaydet}
         busy={busy}
         title="Kayıtlar yazılsın mı?"
-        icon={Users}
         confirmLabel="Evet, Kaydet"
-        description={
+        message={
           onizleme
             ? `${onizleme.yeni} yeni çalışan eklenecek` +
               (onizleme.guncellenecek ? `, ${onizleme.guncellenecek} çalışan güncellenecek` : '') +
               (onizleme.hatali ? `, ${onizleme.hatali} hatalı satır atlanacak` : '') +
-              '. Bu işlem geri alınamaz.'
+              '.\n\nBu işlem geri alınamaz.'
             : ''
         }
       />

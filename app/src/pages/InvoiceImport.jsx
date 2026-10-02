@@ -351,7 +351,7 @@ export default function InvoiceImport() {
           message="Faturalar Faturalar ekranına yeni kayıt olarak eklenir. Daha sonra düzenleyebilirsiniz."
           confirmLabel="Evet, ekle"
           onConfirm={kaydet}
-          onCancel={() => setOnayla(false)}
+          onClose={() => setOnayla(false)}
         />
       ) : null}
     </>

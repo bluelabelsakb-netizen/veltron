@@ -19,11 +19,23 @@ export function AuthProvider({ children }) {
 
   /** Oturum düstüğünde uygulamayi giris ekranina al. */
   const handleAuthLost = useCallback(() => {
+    // ⛔ AÇILIŞTA 401 BEKLENEN BİR DURUMDUR (2 Ekim 2026).
+    //    CurrencyProvider, CompanyProvider ve LookupsProvider korumalı uçları
+    //    KULLANICI GİRİŞ YAPILMADAN çağırır. Bunlar 401 alınca api.js
+    //    `onUnauthorized`'ı tetikler ve buraya düşerdi — sonuç: kullanıcı
+    //    giriş yapmışken bile her açılışta "Oturum sonlandı / tekrar giriş yapın"
+    //    uyarısı çıkıyordu.
+    //
+    //    `status === 'loading'` iken oturum henüz BELİRLENMEMİŞTİR. 401
+    //    sadece "jeton yok" demektir, oturum düştü demek değildir.
+    //    Gerçek durumu açılışın kendi adımı (`/auth/me`) belirler.
+    if (status === 'loading') return;
+
     setToken(null);
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
     toast.error('Oturum sonlandı', 'Lütfen tekrar giriş yapın.');
-  }, [toast]);
+  }, [toast, status]);
 
   /**
    * "BENİ HATIRLA" — otomatik giriş
