@@ -101,6 +101,44 @@ export function authenticate(req, _res, next) {
   return next();
 }
 
+/**
+ * İSTEĞE BAĞLI KİMLİK (2 Ekim 2026)
+ * =================================
+ * Jeton varsa `req.user` dolar, yoksa sessizce geçer — istek REDDEDİLMEZ.
+ *
+ * ⛔ NEDEN: Destek bildirimi giriş ekranından da gönderilebiliyor. Giriş
+ *    yapamayan kullanıcı da bildirim bırakabilmeli, ama bildirim onun
+ *    adına DEĞİL, kullanıcısız (user_id NULL) kaydedilmeli.
+ *
+ * ⛔ TEHLİKE: Bu middleware SADECE kimlik isteyen uçlarda kullanılabilir.
+ *    `/auth/login`, `/support/bildir` gibi. Veri okuyan uçlarda ASLA —
+ *    orada kimliksiz istek boş liste döner ve veri sızdırabilir.
+ */
+export function isOptionalAuth(req, _res, next) {
+  const header = req.headers.authorization || '';
+  const [scheme, token] = header.split(' ');
+
+  if (scheme !== 'Bearer' || !token) return next();
+
+  let payload;
+  try {
+    payload = jwt.verify(token, config.jwtSecret);
+  } catch {
+    return next();
+  }
+  if (payload.typ === 'remember') return next();
+
+  const user = get(
+    'SELECT id, username, full_name, email, role, customer_id, is_active, token_version FROM users WHERE id = ?',
+    [payload.sub]
+  );
+  if (!user || !user.is_active) return next();
+  if (Number(payload.tv ?? 1) !== Number(user.token_version ?? 1)) return next();
+
+  req.user = user;
+  return next();
+}
+
 /** Sadece yoneticilere izin verir. authenticate'dan SONRA kullanilir. */
 export function requireAdmin(req, _res, next) {
   if (req.user?.role !== 'admin') {

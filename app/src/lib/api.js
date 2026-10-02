@@ -101,6 +101,32 @@ export const api = {
   patch: (path, body) => request('PATCH', path, body ?? {}),
   del: (path) => request('DELETE', path),
   raw: request,
+
+  /**
+   * Düz METİN olarak indir (hata günlüğü, CSV dışı dökümler).
+   *
+   * ⛔ Neden ayrı: `request` yanıtı JSON.parse ediyor. Hata günlüğü
+   *    text/plain döndüğü için parse başarısız olur ve içerik
+   *    `{ error: "..." }` içine sarılır — dosyaya yanlış şey yazılır.
+   */
+  text: async (path) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const res = await fetch(`${serverUrl}/api${path}`, {
+        method: 'GET',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new ApiError(res.status, `Hata ${res.status}`);
+      return await res.text();
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(0, 'Sunucuya ulasilamadi.');
+    } finally {
+      clearTimeout(timer);
+    }
+  },
 };
 
 // ------------------------------------------------------------------ format

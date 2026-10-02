@@ -3,6 +3,8 @@ import { Server, LogIn, AlertCircle, Eye, EyeOff, RefreshCw, KeyRound, MonitorSm
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { PasswordResetModal } from './PasswordResetModal.jsx';
+import { Modal } from '../components/Modal.jsx';
+import { DestekOzeti } from '../components/DestekOzeti.jsx';
 
 /**
  * Giris ekrani. Sunucu kapaliysa once adres sorulur.
@@ -33,6 +35,8 @@ export function Login({ serverDown = false }) {
   const [remember, setRemember] = useState(true);
   // Sifre sifirlama talebi (yalnizca normal giris modunda).
   const [sifremiUnuttum, setSifremiUnuttum] = useState(false);
+  // Giris yapilamiyorsa destek penceresi (2 Ekim 2026)
+  const [destekAcik, setDestekAcik] = useState(false);
 
   /** Sunucu kapaliyken "Tekrar dene": ayarları değiştirmeden yeniden bağlanmayı dener. */
   const doRetry = () => {
@@ -246,10 +250,30 @@ export function Login({ serverDown = false }) {
               <button type="button" onClick={() => { setError(''); setMode('server'); }}>
                 Sunucu adresini değiştir
               </button>
+
+              {/* Giris yapilamiyorsa buradan da bilgi alinabilsin (2 Ekim 2026) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setError('');
+                  setSifremiUnuttum(false);
+                  setDestekAcik(true);
+                }}
+                style={{ marginTop: 8, display: 'block' }}
+              >
+                Giriş yapamıyorum — destek
+              </button>
             </div>
           </form>
         )}
       </div>
+
+      {/* Giris ekranindan acilan destek penceresi — oturum gerekmez */}
+      {destekAcik ? (
+        <Modal open onClose={() => setDestekAcik(false)} title="Destek" size="lg">
+          <DestekOzeti />
+        </Modal>
+      ) : null}
 
       {/* Sifre sifirlama talebi — giris ekranindan acilir. */}
       {sifremiUnuttum ? (

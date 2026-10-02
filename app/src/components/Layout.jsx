@@ -5,7 +5,7 @@ import {
   Receipt, Package, ArrowLeftRight, Shield, History, Settings, LogOut,
   Minus, Square, X, ChevronDown, KeyRound, User as UserIcon, Wifi, WifiOff,
   Building, ClipboardList, HardHat, Wallet, TrendingUp, Award, FileSpreadsheet, Upload, CircleDollarSign, Calculator,
-  UserPlus,
+  UserPlus, LifeBuoy,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { initials } from '../lib/api.js';
@@ -62,6 +62,7 @@ const NAV_GROUPS = [
       { to: '/sifre-talepleri', label: 'Şifre Talepleri', icon: KeyRound, adminOnly: true, badgeKey: 'sifreTalepleri' },
       { to: '/aktivite', label: 'Aktivite', icon: History },
       { to: '/ayarlar', label: 'Ayarlar', icon: Settings },
+      { to: '/destek', label: 'Destek', icon: LifeBuoy },
     ],
   },
 ];
@@ -87,6 +88,7 @@ const TITLES = {
   '/aktivite': 'Aktivite Kaydı',
   '/firma': 'Firma Profili',
   '/ayarlar': 'Ayarlar',
+  '/destek': 'Destek',
   '/doviz': 'Döviz Kurları',
   '/vergiler': 'Vergiler',
   '/sifre-talepleri': 'Şifre Talepleri',

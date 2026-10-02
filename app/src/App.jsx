@@ -31,6 +31,7 @@ const Settings = lazy(() => import('./pages/Settings.jsx'));
 const CompanyProfile = lazy(() => import('./pages/CompanyProfile.jsx'));
 const FirstRunWizard = lazy(() => import('./pages/FirstRunWizard.jsx'));
 const InvoiceImport = lazy(() => import('./pages/InvoiceImport.jsx'));
+const Support = lazy(() => import('./pages/Support.jsx'));
 const EmployeeImport = lazy(() => import('./pages/EmployeeImport.jsx'));
 const ExchangeRates = lazy(() => import('./pages/ExchangeRates.jsx'));
 const PasswordRequests = lazy(() => import('./pages/PasswordRequests.jsx'));
@@ -155,6 +156,7 @@ export default function App() {
           <Route path="/aktivite" element={<ActivityLog />} />
           <Route path="/firma" element={<CompanyProfile />} />
           <Route path="/ayarlar" element={<Settings />} />
+          <Route path="/destek" element={<Support />} />
           <Route path="/doviz" element={<ExchangeRates />} />
           <Route path="/sifre-talepleri" element={<PasswordRequests />} />
           <Route path="/vergiler" element={<Taxes />} />

@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { authenticate } from '../middleware/auth.js';
+﻿import { Router } from 'express';
+import { authenticate, isOptionalAuth } from '../middleware/auth.js';
 
 import authRoutes from './auth.js';
 import customerRoutes from './customers.js';
@@ -17,6 +17,7 @@ import lookupRoutes from './lookups.js';
 import companyRoutes from './company.js';
 import faturaPostaRoutes from './faturaPosta.js';
 import updateRoutes from './update.js';
+import supportRoutes, { bilgiUcunu, bildirUcu } from './support.js';
 import importEmployeeRoutes from './importEmployee.js';
 import importMusteriRoutes from './importMusteri.js';
 import importUrunRoutes from './importUrun.js';
@@ -48,6 +49,17 @@ router.use('/license', licenseRoutes);
 // Sadece `/request` aciktir (sifresini unutan giris yapamaz). Diger uclar
 // rota icinde kendi `authenticate` + `requireAdmin` kontrolunu yapiyor.
 router.use('/password-reset', passwordResetRoutes);
+
+// DESTEK — GIRIS GEREKTIRMEZ (2 Ekim 2026)
+// ⛔ Neden ayri: destek sayfasi GIRIS EKRANINDA da calismali. Kullanici
+//    giremiyorsa "neden giremiyorum" diye sorup rapor birakabilmeli.
+//    `/bilgi` sadece surum/isletim sistemi doner, veri sizdirmaz.
+//    `/bildir` ise `isOptionalAuth` ile kimlik varsa kullaniciya baglanir,
+//    yoksa user_id NULL olarak kaydeder.
+//    ⛔ BUGUNKİ HATA BURADA: bu iki uc buraya yazilmadan once global
+//    `authenticate` takiliyor ve 401 donuyordu. Bildirim kaydi hic olusmuyordu.
+router.get('/support/bilgi', bilgiUcunu);
+router.post('/support/bildir', isOptionalAuth, bildirUcu);
 
 // Buradan sonrasi oturum ister
 router.use(authenticate);
@@ -94,6 +106,9 @@ router.use('/invoices', invoiceRoutes);
 // Güncelleme kontrolü — GitHub Releases'ten sürüm sorar (2 Ekim 2026).
 // Sıra önemli değil: /update/check sabit yol.
 router.use('/update', updateRoutes);
+// Destek + hata günlüğü (2 Ekim 2026). Günlük uçları requireAdmin ile
+// korunur — müşteri logları göremez.
+router.use('/support', supportRoutes);
 // Personel Excel iceri aktarma (2 Ekim 2026). Fatura aktarimiyla ayni akis:
 // preview (kayit yazmaz) -> commit (kaydeder).
 // Excel iceri aktarma: /import/{employee,customer,product}/{preview,commit,template}
