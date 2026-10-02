@@ -9,14 +9,17 @@
  * Arayüzü .exe yapmak yetmez; sunucu da kurulmalı, yoksa program
  * "Sunucuya ulaşılamıyor" der.
  *
- * ⛔ Node.js KURULUMU GEREKMEZ: Electron kendi içinde Node gömülüdür.
- *    `ELECTRON_RUN_AS_NODE=1` ile sunucu modunda çalışır. Bu yüzden
- *    kurulum paketi ~180 MB'da kalır (ayrı node.exe 89 MB eklemeye gerek kalmaz).
+ * ⛔ Node.js KURULUMU GEREKMEZ. Electron'un içinde Node gömülüdür ama
+ *    **20.18** — `node:sqlite` için yetersiz (22.5+ gerek). Bu yüzden aşağıda
+ *    (7. adım) ayrı `node.exe` paketin İÇİNE konur ve görev onu çalıştırır.
+ *    Bkz. installer.nsh. Bu yüzden kurulum paketi ~116 MB'da kalır.
+ *
+ * ⛔ Bu klasörü repoya GİRME. Gerçek `.env` (JWT_SECRET dahil) ve
+ *    `veltron.db` kopyası içerir — sadece kurulum paketi için üretilir.
  *
  * KULLANIM:  node tools-src/kurulum-hazirla.mjs
- * ÇIKTI   :  build/server-runtime/  (≈54 MB, .gitignore'da)
- *
- * ⚠️ Bu klasör .env ve veltron.db kopyası İÇERİR — repoya girmemeli.
+ * ÇIKTI   :  build/server-runtime/  (≈140 MB, .gitignore'da)
+ * SONRA  :  npm run dist --workspace app
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';

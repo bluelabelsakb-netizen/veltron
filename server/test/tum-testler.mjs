@@ -80,6 +80,7 @@ const DOSYALAR = [
   'remember.test.mjs',
   'faturaPosta.test.mjs',
   'hataGunlugu.test.mjs',
+  'paketlenebilirlik.test.mjs',
 ];
 
 // Bu koşucunun kendisi sunucu testi içermez; grafik testleri uygulama tarafında.
