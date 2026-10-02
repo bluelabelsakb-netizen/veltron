@@ -314,6 +314,21 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     yere kopyala, orada `node.exe src/index.js` ile başlat, uçlara istek at.
     Dosya yerinde var diye çalıştığını sanma — tuzak 31 tam olarak böyle
     yakalandı.
+34. **⛔ TESTLER KURULU SUNUCUYA YAZABİLİR (en pahalı hataydı).**
+    Kurulu Veltron sunucusu 4000'i tutuyorken `npm test` çalıştırıldı.
+    Koşucunun `spawn` ettiği sunucu portu alamadı ve öldü; ama
+    `saglikBekle()` "bir şey cevap veriyor" diye **kurulu sunucuyu
+    sağlıklı saydı**. Testler ona gitti ve **gerçek veritabanına**
+    5 test müşterisi + 1 test faturası yazdı (customers 16→22).
+    10/13 dosya başarısız oldu, sebebini kimse göremedi.
+    - **İki koruma var:** (1) sunucu başlatılmadan önce port kontrolü,
+      doluysa testler hiç başlamaz; (2) `/api/support/bilgi` artık
+      kullandığı veritabanının **mutlak yolunu** dönüyor, koşucu bunu
+      kendi kopyasıyla karşılaştırır.
+    - **Sonuç çıkarsa önce:** `schtasks /End /TN "Veltron Sunucu"`.
+      Programı kapatmana gerek yok.
+    - ⛔ Yeni bir sunucu ucu eklerken **mutlak yol döndürme.** Test
+      koşucusu bu bilgiye dayanıyor.
 
 ---
 
