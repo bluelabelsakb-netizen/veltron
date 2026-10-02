@@ -18,7 +18,9 @@
 import { Router } from 'express';
 import fs from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
 import { z } from 'zod';
+import { config } from '../config.js';
 import { run, query } from '../db.js';
 import { wrap, notFound } from '../utils/http.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -93,7 +95,16 @@ export function bilgiUcunu(_req, res) {
         ramGbit: Math.round((os.totalmem() / 1024 ** 3) * 10) / 10,
         calismaDakika: Math.round(process.uptime() / 60),
       },
-      veritabani: { tur: 'SQLite (node:sqlite)', dosya: 'server/data/veltron.db' },
+      veritabani: {
+        tur: 'SQLite (node:sqlite)',
+        // ⛔ ASIL YOL. Önceden sabit bir metin ("server/data/veltron.db")
+        //    dönüyordu — hem yanlış bilgi veriyordu hem de test koşucusu
+        //    sunucunun HANGİ veritabanını kullandığını anlayamıyordu.
+        //    Artık `tum-testler.mjs` bu yolu okuyup testin gerçekten
+        //    kendi kopyasına bağlı olduğunu doğruluyor (tuzak 34).
+        dosya: path.resolve(config.dbFile),
+        dosyaAdi: path.basename(config.dbFile),
+      },
       hataGunlugu: {
         dosya: ozet.dosya,
         var: ozet.dosyaVar,
