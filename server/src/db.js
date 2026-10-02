@@ -62,6 +62,10 @@ export function migrate() {
   // ensureColumn gerekir. marka_color bos = fatura.html varsayilan rengi.
   ensureColumn('company_profile', 'marka_color', 'TEXT');
   ensureColumn('company_profile', 'invoice_layout', "TEXT NOT NULL DEFAULT 'fatura.html'");
+  // CALISAN TC KIMLIK (2 Ekim 2026) — Excel iceri aktarimi calisani TC'ye gore
+  // tekillestirir. schema.sql'e de eklendi ama CREATE TABLE IF NOT EXISTS
+  // calisan tabloyu DEGISTIRMEZ (AGENTS.md tuzak 2) -> ayrica ensureColumn.
+  ensureColumn('employees', 'tc_no', 'TEXT');
 
   // --- DOVIZ (coklu para birimi) ---
   // Tutar alanlari KAYIT para biriminde kalir; rate_to_try ile TL karsiligi

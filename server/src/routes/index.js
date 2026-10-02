@@ -17,6 +17,7 @@ import lookupRoutes from './lookups.js';
 import companyRoutes from './company.js';
 import faturaPostaRoutes from './faturaPosta.js';
 import updateRoutes from './update.js';
+import importEmployeeRoutes from './importEmployee.js';
 import workOrderRoutes from './workOrders.js';
 import subcontractorRoutes from './subcontractors.js';
 import payrollRoutes from './payroll.js';
@@ -91,6 +92,9 @@ router.use('/invoices', invoiceRoutes);
 // Güncelleme kontrolü — GitHub Releases'ten sürüm sorar (2 Ekim 2026).
 // Sıra önemli değil: /update/check sabit yol.
 router.use('/update', updateRoutes);
+// Personel Excel iceri aktarma (2 Ekim 2026). Fatura aktarimiyla ayni akis:
+// preview (kayit yazmaz) -> commit (kaydeder).
+router.use('/import', importEmployeeRoutes);
 router.use('/products', productRoutes);
 router.use('/stock', stockRoutes);
 router.use('/users', userRoutes);

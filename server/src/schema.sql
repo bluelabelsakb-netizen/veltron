@@ -525,6 +525,7 @@ CREATE TABLE IF NOT EXISTS employees (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL,
   full_name       TEXT    NOT NULL,
+  tc_no           TEXT,                             -- TC kimlik no (Excel aktarimi tekillestirir)
   position        TEXT,
   phone           TEXT,
   email           TEXT,

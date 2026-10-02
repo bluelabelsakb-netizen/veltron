@@ -5,6 +5,7 @@ import {
   Receipt, Package, ArrowLeftRight, Shield, History, Settings, LogOut,
   Minus, Square, X, ChevronDown, KeyRound, User as UserIcon, Wifi, WifiOff,
   Building, ClipboardList, HardHat, Wallet, TrendingUp, Award, FileSpreadsheet, Upload, CircleDollarSign, Calculator,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { initials } from '../lib/api.js';
@@ -35,6 +36,7 @@ const NAV_GROUPS = [
       { to: '/teklifler', label: 'Teklifler', icon: FileText, countKey: 'pending_quotes' },
       { to: '/faturalar', label: 'Faturalar', icon: Receipt, countKey: 'overdue_invoices' },
       { to: '/fatura-aktar', label: 'Fatura İçe Aktar', icon: Upload },
+      { to: '/calisan-aktar', label: 'Çalışan İçe Aktar', icon: UserPlus },
       { to: '/kar', label: 'Kâr Raporu', icon: TrendingUp },
     ],
   },
@@ -74,6 +76,7 @@ const TITLES = {
   '/teklifler': 'Teklifler',
   '/faturalar': 'Faturalar & Tahsilat',
   '/fatura-aktar': 'Fatura İçe Aktarma',
+  '/calisan-aktar': 'Çalışan İçe Aktarma',
   '/kar': 'Kâr Raporu',
   '/calisanlar': 'Çalışanlar',
   '/maas': 'Maaş / Bordro',
