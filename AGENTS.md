@@ -168,6 +168,12 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | Para biçimi (`1.134.180,91 ₺`) | `app/src/lib/api.js` → `money()`, `moneyKart()` |
 | **Para kartı gösterimi** | `moneyKart()` — < 1.000.000 tam rakam, üstü kısaltma. `money()`'ı **değiştirme** (belgelerde `,00` yazması doğru) |
 | Hatırlama jetonu | `middleware/auth.js` + `routes/auth.js` → `/auth/remember` |
+| **Hata günlüğü (yaz/maskele/oku)** | `server/src/utils/hataGunlugu.js` → `hataYaz()`, `hatalariOku()`, `temizle()` |
+| **Hata yakalayıcı** | `server/src/middleware/error.js` → `errorHandler` (5xx günlüğe yazar, 4xx **yazmaz**) |
+| Destek ucu (8 uç) | `server/src/routes/support.js` |
+| Destek ekranı | `app/src/pages/Support.jsx` |
+| Giriş ekranı destek penceresi | `app/src/components/DestekOzeti.jsx` (jeton gerektirmez) |
+| Düz metin indirme | `app/src/lib/api.js` → `api.text()` (`api.get` JSON parse eder, kullanma) |
 | Program ikonu | `app/electron/icon.png` (üretici: `_ikon-uret.mjs`) |
 
 ---
@@ -248,6 +254,66 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     Gerçek yakalama: Electron'un kendi `capturePage()`'ini çağıran küçük bir
     betik (`BrowserWindow` → `loadFile(app/dist/index.html)` → `capturePage`).
     Boyut şüphesinde `executeJavaScript` ile `getBoundingClientRect()` ölç.
+    ⛔ 2 Ekim'de bunun yerine **Chrome DevTools Protocol (CDP)** kullanıldı ve
+    çok daha güçlü çıktı: Electron'u `--remote-debugging-port=9222` ile
+    açmak + `Runtime.evaluate` ile GERÇEK DOM'u okumak. `document.body.innerText`
+    ve `.card-head h3` listesi "ekran boş mu, kartlar çıktı mı" sorusunu
+    kesin cevaplar. Konsol hataları da `Log.entryAdded` ile toplanır.
+    ⚠️ `Log.enable` **sonraki koşulardan gelen eski günlükleri de tekrarlar** —
+    "temiz koşu" iddiası için Electron'u yeniden başlatmak gerekir.
+23. **Herkese açık uçları global `authenticate`'ten ÖNCE kaydet.**
+    `routes/index.js` sırası: `/auth` → `/license` → `/password-reset` →
+    **senin açık uçların** → `router.use(authenticate)` → iç rotalar.
+    Yanlış yere yazarsan uc sessizce 401 döner ve ekranda hiçbir şey olmaz.
+    2 Ekim'de `/support/bilgi` ve `/support/bildir` ikisi de buna takıldı.
+    Koruma: `hataGunlugu.test.mjs` içinde **jetonsuz** istek atılıyor.
+24. **`isOptionalAuth` = sessiz geçer, reddetmez.** Jeton varsa `req.user` dolar,
+    yoksa istek devam eder. Bunu sadece **kimlik isteyen** uçlarda kullan
+    (`/support/bildir`); veri okuyan uçlarda ASLA — orada kimliksiz istek
+    boş liste döner ve veri sızdırabilir.
+25. **Arayüzde göreli `fetch('/api/...')` ÇALIŞMAZ.** Electron'da sayfa
+    `app://bundle/index.html` adresinde; göreli adres `app://bundle/api/...`
+    olur ve CSP `connect-src` tarafından engellenir. **Her zaman
+    `getServerUrl()`** kullan (`lib/api.js`). `api.get/post/...` bunu zaten
+    yapıyor — elle `fetch` yazıyorsan tabanı kendin kur.
+26. **`text/plain` dönen uçları `api.get()` ile ALMA.** `request()` yanıtı
+    `JSON.parse` ediyor; parse başarısız olunca içerik `{ error: "<metin>" }`
+    içine sarılır ve indirilen dosyaya yanlış şey yazılır. `api.text(path)`
+    eklendi (2 Ekim) — onu kullan.
+27. **Korumalı ucu harici tarayıcıda açma.** `openExternal(url)` jeton
+    gönderemez → hep 401. Kimlik gereken dosyayı indırmak için: `api.text()`
+    ile içeriği al → `window.veltron.app.exportText({ defaultName, content })`
+    (Electron "farklı kaydet" penceresi) kullan.
+28. **`window.confirm` kullanma.** Proje `ConfirmDialog` bileşenini
+    (`components/Modal.jsx`) kullanıyor; Electron'da native uyarı kutusu
+    çirkin ve tema dışı görünüyor.
+29. **Electron'un `window.location.pathname` işe yaramaz.** Hash yönlendirme
+    kullanılıyor; `pathname` her zaman `/index.html`. Gerçek ekran
+    `location.hash.replace('#','')` içinde.
+30. **`Math.round(bayt / 1024)` küçük dosyalarda "0 KB" yazar.** Baytı
+    düzgün göster (`boyutGoster()` gibi).
+31. **⛔ SUNUCU, KENDİ KLASÖRÜ DIŞINDAKİ DOSYAYA BAĞLANAMAZ.** Kurulumda
+    sunucu şuraya taşınıyor:
+    `…\Veltron\resources\server-runtime\server\src\…`
+    `require('../../../app/package.json')` geliştirmede **çalışır** ama
+    kurulumda o klasör **yoktur** → paketlenmiş sunucu **açılışta çöker**,
+    program diğer bilgisayarda hiç açılmaz.
+    2 Ekim'de `routes/support.js` bunu yaptı; 585 test geçmişti, günlük
+    testleri de yeşildi, hata **yalnızca paketi çalıştırınca** çıktı.
+    Koruma: `server/test/paketlenebilirlik.test.mjs` — kaynakları tarar,
+    `server/` dışına çıkan import varsa FAIL eder. `npm run dist` ÖNCESİ
+    çalıştır.
+32. **Kurulum paketi kendi kendine yeterlidir.** `tools-src/kurulum-hazirla.mjs`
+    `.env`, `veltron.db` (+WAL/SHM) ve `node.exe`'i paketin **içine** koyar.
+    Yeni bilgisayarda sadece `.exe`'yi çalıştırmak yeterlidir — `.env` veya
+    veritabanını elle kopyalamak GEREKMEZ. `OKUBENI.md` (kaynak:
+    `tools-src/OKUBENI.md`) buna göre yazıldı.
+    **Node.js kurulumu da gerekmez** — gömülü `node.exe` (v24.21.0) kullanılır.
+33. **Paket üretirken sunucuyu GERÇEKTEN çalıştır.** `npm run dist` bitince
+    `app/release/win-unpacked/resources/server-runtime` klasörünü geçici bir
+    yere kopyala, orada `node.exe src/index.js` ile başlat, uçlara istek at.
+    Dosya yerinde var diye çalıştığını sanma — tuzak 31 tam olarak böyle
+    yakalandı.
 
 ---
 
@@ -498,6 +564,41 @@ olabilir, sessizce ezmek kâr marjını bozar. Boşsa mevcut değer kalır.
 
 ---
 
+## 5g. Hata Günlüğü ve Destek (2 Ekim 2026)
+
+**Amaç:** Kullanıcı "program bozuk" dediğinde elimizde somut kayıt olsun.
+
+**Günlük dosyası:** `server/data/hata-gunlugu.log` (`.gitignore`'da).
+5 MB'yi aşınca eski yarısı atılır, 30 günden eskisi okunmaz.
+
+| Uç | Kim erişir |
+|---|---|
+| `GET /api/support/bilgi` | **herkes** (oturum yok) |
+| `POST /api/support/bildir` | **herkes** (oturum yok; varsa kullanıcıya bağlanır) |
+| `GET /api/support/hata-ozet` · `/hatalar` · `/hata-indir` | yönetici |
+| `DELETE /api/support/hatalar` | yönetici |
+| `GET /api/support/bildirimler` · `PATCH .../:id` | yönetici |
+
+**İki kural, bozulursa proje bozulur:**
+
+1. **4xx günlüğe YAZILMAZ.** 400/401/404/409 kullanıcının normal yaptığı
+   şeylerdir; yazılırsa günlük şişer, asıl hatalar kaybolur. Sadece 5xx
+   ve beklenmeyen durumlar yazılır.
+2. **Gizli veri maskelenir — İKİ KATMAN.**
+   - `temizle()` alan adına bakar (`sifre`, `token`, `JWT_SECRET`, …)
+   - `metinMaskele()` metnin içine gömülü değeri bulur (`Sifre: abc123` —
+     burada alan adı yok)
+   Sadece biri yetmez. Kullanıcı bildirimleri de aynı süzgeçten geçer.
+
+**Bildirim tablosu** (`support_reports`) şemada **yok**, ilk kullanımda
+`CREATE TABLE IF NOT EXISTS` ile açılır. Opsiyonel özellik — her kurulumda
+gereksiz tablo demek.
+
+**Ekranlar:** `Ayarlar → Destek` (`/destek`) ve giriş ekranındaki
+"Giriş yapamıyorum — destek" penceresi (`DestekOzeti.jsx`).
+
+---
+
 ## 6. Çalışma Disiplini
 
 - **Her değişiklikten sonra `npm test` + arayüz testleri.**
@@ -557,7 +658,9 @@ git push        # BİTMEDEN ÖNCE — her zaman
 - Aile erişimi (Cloudflare Tunnel), güvenlik denetimi
 - **`Veltron-Ac.bat`** — tek tıkla açma (sunucu + program birlikte)
 - Program ikonu (`app/electron/icon.png`)
-- 627 test geçiyor
+- **Hata günlüğü + destek sayfası** (bkz. 5g) — 585 test geçiyor
+  (13 dosya: 57 + 32 + 69 + 119 + 31 + 23 + 24 + 34 + 39 + 31 + 62 + 52 + 12)
+- **Kurulum paketi** — USB-Yedek, Node.js'siz tek tıkla kurulum (bkz. 5g)
 
 ### ⬜ Bilinen açıklar / sıradakiler
 
@@ -566,8 +669,12 @@ git push        # BİTMEDEN ÖNCE — her zaman
 2. **`.exe` paketleme** — Windows Developer Mode açılmalı, ortam engeli.
 3. **Yedekleme butonu** — Ayarlar'a "şimdi yedek al", tarih listesi.
 4. **Erteleme raporu** — veri toplanıyor (`deferrals`), rapor ekranı eksik.
-5. **Fatura e-postası** — teklif/fatura gönderme.
+5. **Fatura e-postası** — Gmail kurulumu (`tools-src/gmail-kurulum.md`) ile
+   yapılacak. PDF indirme her zaman çalışıyor, e-posta ek özellik.
 6. **Genel performans raporu** — Excel'de var, web'de yok.
+7. **Müşteri/Ürün Excel aktarım ekranları** — sunucu uçları hazır
+   (`/import/{customer,product}/*`), arayüz yok. `EmployeeImport.jsx`
+   kopyalanıp uyarlanabilir.
 
 ### 🚫 Yapılmayacaklar (bilinçli karar)
 
