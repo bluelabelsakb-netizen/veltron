@@ -5,6 +5,7 @@ import { requireAdmin } from '../middleware/auth.js';
 import { logActivity } from '../utils/activity.js';
 import { wrap, notFound } from '../utils/http.js';
 import * as f from '../utils/fields.js';
+import { iletisimDogrula } from '../utils/iletisim.js';
 
 const router = Router();
 
@@ -91,7 +92,8 @@ router.put(
   '/',
   requireAdmin,
   wrap((req, res) => {
-    const body = schema.parse(req.body ?? {});
+    // ⛔ Firma profili de aynı kurala tabi (3 Ekim 2026)
+    const body = iletisimDogrula(schema.parse(req.body ?? {}), ['phone', 'email', 'tax_number']);
 
     loadProfile(); // satirin var oldugundan emin ol
     const cols = Object.keys(schema.shape);

@@ -24,6 +24,8 @@
  *    Veritabanında daima yerel format tutulur (0 ile başlar).
  */
 
+import { badRequest } from './http.js';
+
 const BOS = ['', null, undefined];
 
 /** Girdiden rakamları ve varsa ülke kodunu ayırır. */
@@ -186,4 +188,114 @@ export function epostaKontrol(deger) {
     deger: gecerli ? s.toLowerCase() : null,
     hata: gecerli ? '' : 'Geçersiz e-posta adresi. Örnek: adres@firma.com',
   };
+}
+
+
+// ================================================================ TC KİMLİK NO
+/**
+ * ⛔ 11 haneli TC doğrulaması. Vergi numarası zaten 11 haneyi kabul
+ *    ediyordu ama GERÇEK bir TC miydi bilmiyordu. En bilinen kural:
+ *    10. hane tek sayı olmalı. Yazım hatasını yakalar.
+ */
+export function tcKontrol(deger) {
+  if (BOS.includes(deger) || String(deger).trim() === '') {
+    return { gecerli: true, deger: null, hata: '', rakam: '' };
+  }
+  const rakam = String(deger).replace(/\D/g, '');
+  if (rakam.length !== 11) {
+    return {
+      gecerli: false, deger: null, rakam,
+      hata: `TC kimlik numarası 11 haneli olmalı, ${rakam.length} hane girdiniz.`,
+    };
+  }
+  if (rakam[0] === '0') {
+    return { gecerli: false, deger: null, rakam, hata: 'TC kimlik numarası 0 ile başlamaz.' };
+  }
+  // ⛔ ÖNCEKİ KURAL YANLIŞTI: "10. hane tek sayı olmalı" diye yazılmıştı.
+  //    Gerçek kural: 10. hane, ilk 9 hanenin KONTROL HAMESİDİR:
+  //      tek konumlar (1,3,5,7,9) × 7 + çift konumlar (2,4,6,8) × 9, mod 10.
+  //    Bu yüzden "12345678902" (10. hane 0 = çift) geçiyordu.
+  const tek = [0, 2, 4, 6, 8].reduce((s, i) => s + Number(rakam[i]), 0);
+  const cift = [1, 3, 5, 7].reduce((s, i) => s + Number(rakam[i]), 0);
+  const beklenen = ((tek * 7) + (cift * 9)) % 10;
+  if (beklenen !== Number(rakam[9])) {
+    return {
+      gecerli: false, deger: null, rakam,
+      hata: 'Bu TC kimlik numarası geçersiz (hane kontrolü tutmuyor).',
+    };
+  }
+  return { gecerli: true, deger: rakam, hata: '', rakam };
+}
+
+// ================================================================ IBAN
+export function ibanKontrol(deger) {
+  if (BOS.includes(deger) || String(deger).trim() === '') {
+    return { gecerli: true, deger: null, hata: '' };
+  }
+  const s = String(deger).replace(/\s/g, '').toUpperCase();
+  if (!/^TR\d{24}$/.test(s)) {
+    return {
+      gecerli: false, deger: null,
+      hata: 'IBAN TR ile başlamalı ve 26 karakter olmalı (TR + 24 hane).',
+    };
+  }
+  return { gecerli: true, deger: s, hata: '' };
+}
+
+// ================================================================ ORTAK BAĞLAYICI
+/**
+ * ⛔ TÜM EKRANLARDA AYNI KURAL — 3 Ekim 2026.
+ *
+ *   Bu alanları İÇEREN HER tablo buradan geçer:
+ *     customers · employees · subcontractors · company · users
+ *
+ *   Neden tek fonksiyon? İlk denemede kural yalnız müşteride vardı;
+ *   çalışan ve taşeronda aynı alan boşlukta duruyordu. Dört ayrı
+ *   yere kopyalamak da bir gün unutulur.
+ *
+ * Kullanım (crud.js beforeCreate / beforeUpdate):
+ *   iletisimDogrula(body, ['phone', 'email']);
+ *   iletisimDogrula(body, ['phone', 'email', 'tax_number']);
+ *
+ * @param {object} body
+ * @param {string[]} alanlar
+ * @returns {object} düzeltilmiş gövde
+ */
+export function iletisimDogrula(body, alanlar = ['phone', 'email']) {
+  const hatalar = [];
+
+  if (alanlar.includes('phone')) {
+    const t = telefonKontrol(body.phone);
+    if (!t.gecerli) hatalar.push(t.hata);
+    else body.phone = t.deger;
+  }
+  if (alanlar.includes('email')) {
+    const e = epostaKontrol(body.email);
+    if (!e.gecerli) hatalar.push(e.hata);
+    else if (body.email != null) body.email = e.deger;
+  }
+  if (alanlar.includes('tax_number')) {
+    const v = vergiNoKontrol(body.tax_number);
+    if (!v.gecerli) hatalar.push(v.hata);
+    else if (body.tax_number != null) body.tax_number = v.deger;
+  }
+  if (alanlar.includes('tc_no')) {
+    const t = tcKontrol(body.tc_no);
+    if (!t.gecerli) hatalar.push(t.hata);
+    else if (body.tc_no != null) body.tc_no = t.deger;
+  }
+  if (alanlar.includes('iban')) {
+    const i = ibanKontrol(body.iban);
+    if (!i.gecerli) hatalar.push(i.hata);
+    else if (body.iban != null) body.iban = i.deger;
+  }
+
+  if (hatalar.length) {
+    // ⛔ Sıradan Error + e.status = 400 YETMİYOR. errorHandler yalnızca
+    //    `err instanceof HttpError` yakalıyor; düz Error 500'e düşüyordu
+    //    ("Destek sayfasından ilet" diye uyarı çıkıyordu).
+    throw badRequest(hatalar[0], hatalar.length > 1 ? hatalar : undefined);
+  }
+
+  return body;
 }

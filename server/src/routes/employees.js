@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createCrudRouter } from '../utils/crud.js';
 import * as f from '../utils/fields.js';
+import { iletisimDogrula } from '../utils/iletisim.js';
 
 const schema = z.object({
   user_id: f.id,
@@ -9,6 +10,9 @@ const schema = z.object({
   department: f.text(100),
   phone: f.text(40),
   email: f.text(120),
+  // ⛔ Sütun tabloda VARDI ama şemada yoktu: gönderilen tc_no sessizce
+  //    düşüyordu, doğrulama da çalışmıyordu. 3 Ekim 2026'da eklendi.
+  tc_no: f.text(11),
   hire_date: f.date(),
   leave_date: f.date(),
   monthly_salary: f.nonNegNum(),
@@ -44,6 +48,8 @@ export default createCrudRouter({
   filters: { is_active: 'is_active', department: 'department' },
   sort: { name: 'full_name', salary: 'monthly_salary', hire_date: 'hire_date', createdAt: 'created_at' },
   defaultSort: 'full_name ASC',
+  beforeCreate: (body) => iletisimDogrula(body, ['phone', 'email', 'tc_no', 'iban']),
+  beforeUpdate: (body) => iletisimDogrula(body, ['phone', 'email', 'tc_no', 'iban']),
   describe: (r) => r?.full_name,
   inactiveFields: ['is_active'],
 });

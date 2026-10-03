@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createCrudRouter } from '../utils/crud.js';
 import { badRequest } from '../utils/http.js';
 import * as f from '../utils/fields.js';
-import { telefonKontrol, vergiNoKontrol, epostaKontrol } from '../utils/iletisim.js';
+import { iletisimDogrula } from '../utils/iletisim.js';
 
 /**
  * ⛔ Telefon / vergi no / e-posta — ELLE GİRERKEN DE DOĞRULANIR
@@ -21,22 +21,6 @@ import { telefonKontrol, vergiNoKontrol, epostaKontrol } from '../utils/iletisim
  *      preprocess ile de yapılabilirdi ama hata mesajı kaybolurdu.
  */
 
-/** Doğrular, düzeltir, hataları toplar. */
-function iletisimDogrula(body, hatalar) {
-  const t = telefonKontrol(body.phone);
-  if (!t.gecerli) hatalar.push(t.hata);
-  else body.phone = t.deger;
-
-  const v = vergiNoKontrol(body.tax_number);
-  if (!v.gecerli) hatalar.push(v.hata);
-  else if (body.tax_number != null) body.tax_number = v.deger;
-
-  const e = epostaKontrol(body.email);
-  if (!e.gecerli) hatalar.push(e.hata);
-  else if (body.email != null) body.email = e.deger;
-
-  return body;
-}
 
 // ⛔ `superRefine` KULLANILMADI. crud.js `schema.shape` okuyor; `superRefine`
 //    şemayı ZodEffects'e çevirip `.shape` erişimini kırıyordu
@@ -68,11 +52,7 @@ function requireIdentity(body) {
   // ⛔ Telefon / vergi no / e-posta — 3 Ekim 2026.
   //    Excel aktarımı bunları kontrol ediyordu, elle giriş kontrol ETMİYORDU.
   //    Aynı veri Excel'den hata verirken elle girilince geçiyordu.
-  const hatalar = [];
-  iletisimDogrula(body, hatalar);
-  if (hatalar.length) throw badRequest(hatalar[0]);
-
-  return body;
+  return iletisimDogrula(body, ['phone', 'email', 'tax_number']);
 }
 
 export default createCrudRouter({

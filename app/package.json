@@ -80,7 +80,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": false,
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Veltron",
       "include": "../build/installer.nsh",

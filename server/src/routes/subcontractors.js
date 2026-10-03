@@ -4,6 +4,7 @@ import { query, get, run } from '../db.js';
 import { logActivity } from '../utils/activity.js';
 import { wrap, notFound, badRequest, pagination, safeSort } from '../utils/http.js';
 import * as f from '../utils/fields.js';
+import { iletisimDogrula } from '../utils/iletisim.js';
 
 const router = Router();
 
@@ -153,7 +154,9 @@ router.get(
 router.post(
   '/',
   wrap((req, res) => {
-    const body = subSchema.parse(req.body ?? {});
+    let body = subSchema.parse(req.body ?? {});
+    // ⛔ Taşeronda da telefon/vergi no/e-posta kuralı (3 Ekim 2026)
+    body = iletisimDogrula(body, ['phone', 'email', 'tax_number']);
     const cols = ['name', 'contact', 'phone', 'email', 'tax_number', 'specialty', 'address', 'city', 'default_rate', 'rate_unit', 'rating', 'notes', 'is_active'];
     const { lastInsertRowid } = run(
       `INSERT INTO subcontractors (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,

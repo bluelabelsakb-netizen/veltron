@@ -71,24 +71,19 @@
   DetailPrint "Sunucu başlatılıyor..."
   nsExec::ExecToLog 'schtasks /Run /TN "Veltron Sunucu"'
 
-  ; ---- Masaüstü kısayolu: SONDA SOR (2 Ekim 2026) ---------------------
-  ;  İstek: "sorsun, tamam dersek oluştursun".
-  ;  Başlat menüsü kısayolu zaten oluşturuldu (createStartMenuShortcut) —
-  ;  o bir gelenek kuralı, sorulmaz.
-  MessageBox MB_YESNO|MB_ICONQUESTION \
-    "Masaüstünde Veltron simgesi oluşturulsun mu?$\n$\n(İsterseniz kısayolu sonra elle de oluşturabilirsiniz. Başlat menüsünde her zaman kısayol var.)" \
-    IDYES KisayolEvet IDNO KisayolHayir
-
-  KisayolEvet:
-    DetailPrint "Masaüstü kısayolu oluşturuluyor..."
-    CreateShortCut "$DESKTOP\Veltron.lnk" "$INSTDIR\Veltron.exe"
-    Goto KisayolBitti
-
-  KisayolHayir:
-    DetailPrint "Masaüstü kısayolu oluşturulmadi (kullanici tercihi)."
-    Delete "$DESKTOP\Veltron.lnk"
-
-  KisayolBitti:
+  ; ---- Masaüstü kısayolu -----------------------------------------------
+  ;  ⛔ SORULMUYOR (3 Ekim 2026). Önceden kurulumun SONUNDA
+  ;     MessageBox ile "oluşturulsun mu?" diye soruluyordu:
+  ;       "Masaütünde Veltron simgesi oluşturulsun mu?"
+  ;     Kullanıcı bunu kurulum sırasında bildirim sanıyor ve kafası
+  ;     karışıyordu: "kurulum .exe gibi olmuyor mu?"
+  ;
+  ;     Artık kısayol DAIMA oluşturuluyor, soru YOK. Çoğu Windows
+  ;     programı böyle yapar. Oluşturma işini electron-builder'ın
+  ;     kendi `createDesktopShortcut: true` seçeneği yapıyor — elle
+  ;     CreateShortCut yazmaktan daha güvenilir.
+  ;
+  ;  Başlat menüsü kısayolu da her zaman oluşturulur.
   DetailPrint "Kurulum tamamlandi."
 !macroend
 
