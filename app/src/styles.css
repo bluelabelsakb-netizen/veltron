@@ -1116,6 +1116,22 @@ textarea.input { resize: vertical; min-height: 62px; }
   animation: demo-pulse 2.4s ease-in-out infinite;
 }
 @keyframes demo-pulse { 50% { filter: brightness(1.18); } }
+
+/* ⛔ KRİTİK GÜNCELLEME ROZETİ (3 Ekim 2026)
+   Normal guncelleme rozeti sonuk durur, kritik olan yanip soner:
+   kapatilamayan uyarinin gorunur kalmasini saglar. Kullanici gormezden
+   gelirse programi acik birakip unutur, sonraki acilista yine gorur. */
+@keyframes veltron-pulse {
+  0%, 100% { filter: brightness(1); box-shadow: 0 2px 8px rgba(0, 0, 0, .3); }
+  50% {
+    filter: brightness(1.35);
+    box-shadow: 0 0 0 4px rgba(248, 113, 113, .25), 0 2px 12px rgba(0, 0, 0, .4);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Hareket duyarliligi: yanip sonme yerine sabit ve belirgin kalsin */
+  .veltron-kritik-pulse { animation: none !important; }
+}
 .demo-banner-inner {
   display: flex; align-items: center; gap: 11px;
   padding: 7px 16px; max-width: 1400px; margin: 0 auto;

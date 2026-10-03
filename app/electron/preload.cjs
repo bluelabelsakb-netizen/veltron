@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('veltron', {
     // Güncelleme sayfasını varsayılan tarayıcıda aç (2 Ekim 2026).
     // ⛔ Yalnızca https adresleri — keyfi protokol açılmasın.
     openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
+    // Kurulum dosyasını çalıştır (3 Ekim 2026). ⛔ Yalnızca programın kendi
+    // indirdiği dosya için — ana süreç yolu doğrular.
+    guncelleKur: (dosyaYolu) => ipcRenderer.invoke('app:guncelle-kur', dosyaYolu),
   },
   platform: process.platform,
 });

@@ -116,6 +116,8 @@ const DOSYALAR = [
   'aktarmaEkran.test.mjs',
   'ofisKural.test.mjs',
   'ofisStogu.test.mjs',
+  'guncelleme.test.mjs',
+  'guncellemeUctanUca.test.mjs',
 ];
 
 /**

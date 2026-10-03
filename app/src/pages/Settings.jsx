@@ -24,6 +24,36 @@ export default function Settings() {
   const [remembered, setRemembered] = useState(null);
   const [unutuyor, setUnutuyor] = useState(false);
 
+  // Güncelleme kontrolü (3 Ekim 2026) — Ayarlar'dan elle sorma
+  const [guncellemeKontrolBekliyor, setGuncellemeKontrolBekliyor] = useState(false);
+  const [guncellemeSonuc, setGuncellemeSonuc] = useState('');
+
+  /** GitHub'a sorar ve sonucu kullanıcıya anlatır. */
+  const guncellemeKontrol = async () => {
+    setGuncellemeKontrolBekliyor(true);
+    setGuncellemeSonuc('');
+    try {
+      const r = await api.get('/update/check');
+      const d = r.data;
+      if (d?.sonuc === 'guncelleme-var') {
+        const yazi = `${d.yeni} sürümü var${d.kritik ? ' (KRİTİK)' : ''}`;
+        setGuncellemeSonuc(yazi);
+        toast.success('Güncelleme bulundu', `${yazi} — sağ üstteki köşe simgesine bak.`);
+      } else if (d?.sonuc === 'guncel') {
+        setGuncellemeSonuc('güncel');
+        toast.success('Güncelsiniz', 'Yeni sürüm yok.');
+      } else {
+        setGuncellemeSonuc('bağlanamadı');
+        toast.fromError(new Error(d?.mesaj || 'Sunucuya ulaşılamadı'), 'Kontrol edilemedi');
+      }
+    } catch (err) {
+      setGuncellemeSonuc('bağlanamadı');
+      toast.fromError(err, 'Kontrol edilemedi', 'İnternet bağlantısını kontrol et.');
+    } finally {
+      setGuncellemeKontrolBekliyor(false);
+    }
+  };
+
   // Fatura gorunumu + gonderim (1 Ekim 2026)
   const [markaRenk, setMarkaRenk] = useState('#1E3A8A');
   const [markaKaydediyor, setMarkaKaydediyor] = useState(false);
@@ -519,6 +549,32 @@ export default function Settings() {
               Belgeler klasörünü aç
             </button>
           ) : null}
+
+          {/* ⛔ GÜNCELLEME KONTROLÜ — 3 Ekim 2026
+              Program açılışta kendisi sorar; buradaki düğme "ya da şimdi
+              bakayım" için. `useUpdateCheck().kontrolEt` önceden yazılmıştı
+              ama HİÇBİR ekranda çağrılmıyordu. */}
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+            <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-sm"
+                onClick={guncellemeKontrol}
+                disabled={guncellemeKontrolBekliyor}
+              >
+                <RefreshCw size={13} className={guncellemeKontrolBekliyor ? 'spin' : undefined} />
+                {guncellemeKontrolBekliyor ? 'Sorgulanıyor...' : 'Güncelleme kontrol et'}
+              </button>
+
+              <span className="text-dim text-sm">
+                Kurulu: <strong className="mono">{appInfo?.version || '1.0.0'}</strong>
+                {guncellemeSonuc ? ` · ${guncellemeSonuc}` : ''}
+              </span>
+            </div>
+            <div className="field-hint" style={{ marginTop: 7, lineHeight: 1.55 }}>
+              Yeni sürüm varsa sağ üstte köşe simgesi belirir. Programın açılışını
+              engellemez — istediğin zaman güncelleyebilirsin, verilerin yerinde kalır.
+            </div>
+          </div>
         </div>
       </div>
 

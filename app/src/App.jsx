@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { useCompany } from './context/CompanyContext.jsx';
 import { Layout } from './components/Layout.jsx';
-import UpdateBanner, { useUpdateCheck } from './components/UpdateBanner.jsx';
+import UpdatePanel, { UpdateIndicator, useUpdateCheck } from './components/UpdateBanner.jsx';
 import { Login } from './pages/Login.jsx';
 import MustChangePassword from './pages/MustChangePassword.jsx';
 import { Loading } from './components/Primitives.jsx';
@@ -74,10 +74,21 @@ export default function App() {
   const { company, loading: companyLoading, reload: reloadCompany, firstRunDone } = useCompany();
   const [sihirbazBasladi, setSihirbazBasladi] = useState(false);
   const [sihirbazKapandi, setSihirbazKapandi] = useState(false);
+  const [kurulumHatasi, setKurulumHatasi] = useState('');
 
   // Güncelleme kontrolü — yalnızca giriş yapılmış, şirket içi kullanıcılarda.
   // Müşteri portalinde ve giriş ekranında gösterilmez.
   const guncelleme = useUpdateCheck(!!user && !isCustomer && status === 'ready');
+
+  /**
+   * ⛔ Kurulum başlatılamadıysa kullanıcıyı bilgilendir. Sessizce yutmak,
+   *    "Kur" düğmesine basıp hiçbir şey olmamasından kötüdür.
+   */
+  const guncellemeKurulumHatasi = (mesaj) => {
+    setKurulumHatasi(mesaj || 'Güncelleme kurulamadı.');
+    // ⛔ 12 saniye sonra kendiliğinden kaybolur — kalıcı uyarı yorar
+    setTimeout(() => setKurulumHatasi(''), 12000);
+  };
 
   // Ilk kurulum: firma profili bos ise sihirbaz acilir.
   const profilBos = !!user && !isCustomer && !companyLoading && !firstRunDone?.();
@@ -172,15 +183,66 @@ export default function App() {
       </Routes>
       </Suspense>
 
-      {/* Güncelleme bildirimi (2 Ekim 2026) — açılıştan hemen sonra sorar.
-          Kullanıcı "Eski sürümden devam et" derse hiçbir şey olmaz. */}
-      <UpdateBanner
-        visible={guncelleme.visible}
+      {/* GÜNCELLEME (3 Ekim 2026)
+          ⛔ Açılışta modal sıçramaz. Sadece sağ üstte küçük rozet belirir.
+             Kullanıcı: "Program açılsın, veriler görünsün, işlem bitiminde
+             güncelleyeyim." — öyle çalışıyor.
+             Kritik sürümde rozet kırmızı ve KAPATILAMAZ, panel kendiliğinden açılır. */}
+      <UpdateIndicator
         veri={guncelleme.veri}
-        indiriliyor={guncelleme.indiriliyor}
-        indir={guncelleme.indir}
-        onKapat={guncelleme.kapat}
+        acik={guncelleme.acik}
+        indirme={guncelleme.indirme}
+        onAcKapa={() => guncelleme.setAcik(!guncelleme.acik)}
       />
+      <UpdatePanel
+        veri={guncelleme.veri}
+        acik={guncelleme.acik}
+        indirme={guncelleme.indirme}
+        bosTespit={guncelleme.bosTespit}
+        bosSayac={guncelleme.bosSayac}
+        kuruluyor={guncelleme.kuruluyor}
+        onKapat={() => guncelleme.setAcik(false)}
+        indir={guncelleme.indir}
+        indirmeBaslat={() => guncelleme.indir(false)}
+        indirmeIptal={guncelleme.indirmeIptal}
+        kur={async () => {
+          const sonuc = await guncelleme.kur();
+          if (sonuc && sonuc.ok === false) guncellemeKurulumHatasi(sonuc.error);
+        }}
+      />
+
+      {/* ⛔ Kurulum başlatılamadıysa kullanıcı BİLMELİ — "Kur" düğmesine
+          basıp hiçbir şey olmaması en kötü sonuç. */}
+      {kurulumHatasi ? (
+        <div
+          role="alert"
+          style={{
+            position: 'fixed',
+            bottom: 18,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 400,
+            maxWidth: 'calc(100vw - 40px)',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius)',
+            background: 'var(--danger)',
+            color: '#fff',
+            fontSize: 13,
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <span>{kurulumHatasi}</span>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ color: '#fff' }}
+            onClick={() => setKurulumHatasi('')}
+          >
+            Tamam
+          </button>
+        </div>
+      ) : null}
     </>
-  );
-}
+  );}

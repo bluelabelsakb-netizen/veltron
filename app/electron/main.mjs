@@ -260,6 +260,65 @@ app.whenReady().then(() => {
   });
 });
 
+/**
+ * GÜNCELLEME KURULUMUNU BAŞLAT (3 Ekim 2026)
+ * =========================================
+ * ⛔ Kullanıcı "Kur" dediğinde çağrılır. Otomatik ÇAĞRILMAZ.
+ *
+ * ⛔ NEDEN SUNUCUDA DEĞİL?
+ *   Sunucu `server/data/updates/` altındaki .exe dosyasının yolunu verir.
+ *   Dosyayı ÇALIŞTIRAN Electron'dur. Sunucuya "şu dosyayı çalıştır"
+ *   yaptırmak güvenlik açığı olurdu (istediği yolu çalıştırabilirdi).
+ *
+ * ⛔ VERİ KAYBI YOK: veritabanı yalnızca kurulumun kendisinde okunur,
+ *   yazılmaz. Program kapansa bile veri diskte durur.
+ */
+ipcMain.handle('app:guncelle-kur', async (_e, dosyaYolu) => {
+  const yol = String(dosyaYolu || '');
+
+  // ⛔ GÜVENLİK: yalnızca indirme klasöründeki .exe çalıştırılabilir.
+  //   Renderer istediği yolu geçiremez.
+  const exeMi = /\.exe$/i.test(yol);
+  const varMi = exeMi && fs.existsSync(yol);
+  if (!varMi) {
+    return { ok: false, error: 'Guncelleme dosyasi bulunamadi.' };
+  }
+
+  // ⛔ Yolun programın kendi veri klasörü içinde olduğunu doğrula.
+  const serverKok = app.isPackaged
+    ? path.join(process.resourcesPath, 'server-runtime', 'server')
+    : path.join(app.getAppPath(), '..', 'server');
+  const izinliDizin = path.join(serverKok, 'data', 'updates');
+
+  let gercek = '';
+  let izinli = '';
+  try {
+    gercek = fs.realpathSync(yol);
+    izinli = fs.realpathSync(izinliDizin);
+  } catch {
+    return { ok: false, error: 'Guncelleme dosyasi dogrulanamadi.' };
+  }
+
+  if (!gercek.startsWith(izinli)) {
+    return {
+      ok: false,
+      error:
+        'Guncelleme dosyasi dogrulanamadi. Guvenlik icin yalnizca programin ' +
+        'kendi indirdigi kurulum dosyasi calistirilabilir.',
+    };
+  }
+
+  try {
+    // ⛔ ONCE pencereyi göster, SONRA çık. Tersi yapılırsa kurulum
+    //    dosya kilidi bulur ve "hata" verir.
+    await shell.openPath(gercek);
+    setTimeout(() => app.quit(), 800);
+    return { ok: true };
+  } catch (hata) {
+    return { ok: false, error: hata.message };
+  }
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
