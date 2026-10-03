@@ -150,15 +150,68 @@ router.get(
       ...params, limit, offset,
     ]).map(decode);
 
+    // ⛔⛔ BURADA MALZEME MALİYETİ EKSİKTİ — 3 Ekim 2026'da düzeltildi.
+//
+//   Eski özet hesabı:
+//     cost   = taşeron + emek
+//     margin = satış − taşeron − emek
+//
+//   Malzeme (work_order_materials) HİÇ sayılmıyordu. Sonuç:
+//
+//     İş Emirleri özeti : maliyet  332.094  kâr 951.167  (%74 marj)
+//     Kâr Raporu        : maliyet 1.269.739  kâr  13.522  (%1,1 marj)
+//                       fark = 937.645 = tam olarak material_cost
+//
+//   ⛔ AYNI EKRAN, İKİ FARKLI KÂR. Satır bazındaki `decode()` malzemeyi
+//      SAYIYORDU (doğruydu), `profit.js` de sayıyordu. Sadece üstteki özet
+//      KPI yanlıştı — yani liste satırları ile ekranın tepesi birbirini
+//      tutmuyordu. Kullanıcı "bu program ne kadar kâr ediyor" diye sorunca
+//      ekranda gördüğü rakam gerçek değildi.
+//
+//   Nasıl bulundu: "müşteri gibi kullan" — aynı veri iki ekranda karşılaştırıldı.
+    // ⛔ SAKLANAN `amount` SÜTUNUNA GÜVENİLMEZ — 3 Ekim 2026.
+    //   Satır bazındaki `decode()` tutarı TARTIMDAN yeniden hesaplıyor:
+    //     net = gross − tare ; tutar = net ÷ bölen × fiyat
+    //   Özet ise SUM(w.amount) ile KAYITLI değeri topluyordu. Bayat
+    //   veride bu ikisi ayrışıyordu: 28 iş emrinin 24'ünde fark vardı.
+    //
+    //   API saklanan sütunu doğru yazıyor, ama eski demo verisi SQL ile
+    //   doğrudan eklenmişti. Gelecekte de öyle olabilir.
+    //
+    //   Çözüm: özet de AYNI formülü SQL'de hesaplar. Kaydedilmiş sütun
+    //   bir önbellek olmaktan çıkar; satırla özet ayrışamaz.
+    const TUTAR_SQL = `
+      COALESCE(SUM(
+        CASE
+          WHEN w.gross_weight IS NULL AND w.tare_weight IS NULL THEN 0
+          ELSE ROUND(
+            ((COALESCE(w.gross_weight,0) - COALESCE(w.tare_weight,0))
+              / CASE WHEN w.unit = 'Ton' THEN 1000.0 ELSE 1.0 END)
+            * COALESCE(w.unit_price,0)
+          , 2)
+        END
+      ), 0)`;
+
     const agg = get(
       `SELECT COALESCE(SUM(w.net_weight), 0) AS net_total,
-              COALESCE(SUM(w.amount), 0)    AS amount_total,
+              ${TUTAR_SQL} AS amount_total,
               COALESCE(SUM(w.subcontractor_cost), 0) AS sub_cost_total,
               COALESCE(SUM(w.labor_cost), 0) AS labor_cost_total,
-              COALESCE(SUM(CASE WHEN w.invoice_id IS NULL AND w.status = 'teslim_edildi' THEN w.amount ELSE 0 END), 0) AS uninvoiced_total
+              COALESCE(SUM(w.material_cost), 0) AS material_cost_total,
+              COALESCE(SUM(CASE WHEN w.invoice_id IS NULL AND w.status = 'teslim_edildi'
+                  THEN (COALESCE(w.gross_weight,0) - COALESCE(w.tare_weight,0))
+                       / CASE WHEN w.unit = 'Ton' THEN 1000.0 ELSE 1.0 END
+                       * COALESCE(w.unit_price,0)
+                  ELSE 0 END), 0) AS uninvoiced_total
          FROM ${FROM} ${where}`,
       params
     );
+
+    // Tek yerde hesapla — hem cost hem margin aynı rakamı kullansın
+    const ozetSat = Number(agg?.sub_cost_total || 0)
+      + Number(agg?.labor_cost_total || 0)
+      + Number(agg?.material_cost_total || 0);
+    const ozetTutar = Number(agg?.amount_total || 0);
 
     res.json({
       data: rows,
@@ -167,13 +220,14 @@ router.get(
       offset,
       summary: {
         net_weight: Math.round(Number(agg?.net_total || 0) * 1000) / 1000,
-        amount: Math.round(Number(agg?.amount_total || 0) * 100) / 100,
+        amount: Math.round(ozetTutar * 100) / 100,
         sub_cost: Math.round(Number(agg?.sub_cost_total || 0) * 100) / 100,
         labor_cost: Math.round(Number(agg?.labor_cost_total || 0) * 100) / 100,
-        cost: Math.round((Number(agg?.sub_cost_total || 0) + Number(agg?.labor_cost_total || 0)) * 100) / 100,
-        margin: Math.round(
-          (Number(agg?.amount_total || 0) - Number(agg?.sub_cost_total || 0) - Number(agg?.labor_cost_total || 0)) * 100
-        ) / 100,
+        // ⛔ Bu alan YENİDEN eklendi. Önce yoktu; ekran malzeme maliyetini
+        //    hiç göstermiyordu.
+        material_cost: Math.round(Number(agg?.material_cost_total || 0) * 100) / 100,
+        cost: Math.round(ozetSat * 100) / 100,
+        margin: Math.round((ozetTutar - ozetSat) * 100) / 100,
         uninvoiced: Math.round(Number(agg?.uninvoiced_total || 0) * 100) / 100,
       },
     });
@@ -192,10 +246,22 @@ router.get(
         (SELECT COUNT(*) FROM work_orders WHERE status = 'teslim_edildi' AND invoice_id IS NULL) AS uninvoiced,
         (SELECT COALESCE(SUM(net_weight), 0) FROM work_orders) AS net_total
     `);
+    // ⛔⛔ AYNI HATA BURADA DA VARDI — 3 Ekim 2026'da düzeltildi.
+//   Eski yazım maliyeti YALNIZCA subcontractor_jobs'tan topluyordu:
+//     cost = SUM((SELECT SUM(cost) FROM subcontractor_jobs ...))
+//   Emek ve malzeme sayılmıyordu. Kâr Raporu ile aynı rakamı vermiyordu.
+//
+//   ⛔ Üç uç artık AYNI KAYNAĞI kullanıyor: work_order_summary görünümü
+//      (taşeron + emek + malzeme hepsi içinde). Böylece liste özeti,
+//      /summary ve /profit birbirinden ayrışamaz.
     const money = get(`
-      SELECT COALESCE(SUM(amount), 0) AS amount,
-             COALESCE(SUM((SELECT COALESCE(SUM(cost),0) FROM subcontractor_jobs sj WHERE sj.work_order_id = w.id)), 0) AS cost
-        FROM work_orders w
+      SELECT
+        COALESCE(SUM(amount), 0) AS amount,
+        COALESCE(SUM(subcontractor_cost), 0) AS sub_cost,
+        COALESCE(SUM(labor_cost), 0) AS labor_cost,
+        COALESCE(SUM(material_cost), 0) AS material_cost,
+        COALESCE(SUM(subcontractor_cost + labor_cost + material_cost), 0) AS cost
+      FROM work_order_summary
     `);
     const byCustomer = query(`
       SELECT COALESCE(c.company, 'Musteri #' || w.customer_id) AS label,
@@ -211,6 +277,9 @@ router.get(
       data: {
         ...Object.fromEntries(Object.entries(s || {}).map(([k, v]) => [k, Number(v)])),
         amount: Math.round(Number(money?.amount || 0) * 100) / 100,
+        sub_cost: Math.round(Number(money?.sub_cost || 0) * 100) / 100,
+        labor_cost: Math.round(Number(money?.labor_cost || 0) * 100) / 100,
+        material_cost: Math.round(Number(money?.material_cost || 0) * 100) / 100,
         cost: Math.round(Number(money?.cost || 0) * 100) / 100,
         margin: Math.round((Number(money?.amount || 0) - Number(money?.cost || 0)) * 100) / 100,
         by_customer: byCustomer,
