@@ -157,8 +157,7 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | Maaş hesabı | `server/src/utils/payroll.js` |
 | CRUD altyapısı | `server/src/utils/crud.js` |
 | Müşteri portalı | `server/src/routes/portal.js` + `app/src/pages/portal/` |
-| Döviz (TCMB) | `server/src/routes/currency.js` |
-| KDV | `server/src/routes/taxes.js` |
+| Döviz (TCMB) | `server/src/routes/currency.js` || KDV | `server/src/routes/taxes.js` |
 | Excel içe/dışa aktarma | `server/src/routes/import.js`, `export.js` |
 | Demo modu / lisans | `server/src/routes/license.js` |
 | Şifre sıfırlama | `server/src/routes/passwordReset.js` |
@@ -175,6 +174,9 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | Giriş ekranı destek penceresi | `app/src/components/DestekOzeti.jsx` (jeton gerektirmez) |
 | Düz metin indirme | `app/src/lib/api.js` → `api.text()` (`api.get` JSON parse eder, kullanma) |
 | Program ikonu | `app/electron/icon.png` (üretici: `_ikon-uret.mjs`) |
+| **Ofis stoğu (kural mantığı)** | `server/src/utils/ofisKural.js` → `istemeKontrol()`, `enErkenTarih()` |
+| Ofis stoğu ucu | `server/src/routes/ofisStogu.js` (`/api/office-stock/*`) |
+| Ofis stoğu ekranı | `app/src/pages/OfficeStock.jsx` |
 
 ---
 
@@ -314,8 +316,7 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     yere kopyala, orada `node.exe src/index.js` ile başlat, uçlara istek at.
     Dosya yerinde var diye çalıştığını sanma — tuzak 31 tam olarak böyle
     yakalandı.
-34. **⛔ TESTLER KURULU SUNUCUYA YAZABİLİR (en pahalı hataydı).**
-    Kurulu Veltron sunucusu 4000'i tutuyorken `npm test` çalıştırıldı.
+34. **⛔ TESTLER KURULU SUNUCUYA YAZABİLİR (en pahalı hataydı).**    Kurulu Veltron sunucusu 4000'i tutuyorken `npm test` çalıştırıldı.
     Koşucunun `spawn` ettiği sunucu portu alamadı ve öldü; ama
     `saglikBekle()` "bir şey cevap veriyor" diye **kurulu sunucuyu
     sağlıklı saydı**. Testler ona gitti ve **gerçek veritabanına**
@@ -329,6 +330,19 @@ Ayrıntı: `MUSTERI-PORTALI.md`
       Programı kapatmana gerek yok.
     - ⛔ Yeni bir sunucu ucu eklerken **mutlak yol döndürme.** Test
       koşucusu bu bilgiye dayanıyor.
+35. **Testte "tablo boş" varsayma.** `tum-testler.mjs` gerçek veritabanının
+    **kopyasını** açar. Kullanıcının gerçek kayıtları da kopyada durur ve
+    test onlara dokunmamalı. `COUNT(*) === 0` yerine **kendi oluşturduğun
+    id'lerin silindiğini** doğrula. (Ofis stoğu testinde başta böyle
+    yazılmıştı, kullanıcının verisi olduğu için kırıldı.)
+36. **`f.bool()` JSON `true` KABUL ETMEZ.** `fields.js` yalnızca `'true'`,
+    `1`, `'1'`, `'false'`, `0`, `'0'` kabul ediyor; JS boolean'ı reddediyor.
+    API'ye `is_active: 1` gönder. `fields.js` proje geneli olduğu için
+    değiştirilmedi.
+37. **PowerShell ile Node betiği çalıştırma.** `node -e "..."` içinde
+    tırnak/şablon kaçarlar (`${acik kişide...}` → SyntaxError, `""` ile
+    sıralı değer kaybolur). Karmaşık betikleri **dosyaya yaz**, sonra
+    `node dosya.mjs` çalıştır.
 
 ---
 
@@ -611,6 +625,37 @@ gereksiz tablo demek.
 
 **Ekranlar:** `Ayarlar → Destek` (`/destek`) ve giriş ekranındaki
 "Giriş yapamıyorum — destek" penceresi (`DestekOzeti.jsx`).
+
+## 5h. Ofis Stoğu (3 Ekim 2026)
+
+**Kullanıcının isteği:** "Adama 1 tane kaynakçı eldiveni veriyorum. 1 hafta
+sonra yine istemesin. Ona ne zaman verdiğimi görebilmem lazım."
+
+**Üç karar (kullanıcıdan):**
+
+| Karar | Seçim | Sonuç |
+|---|---|---|
+| Nerede duracak? | **AYRI** liste | `products`'a dokunmaz, kârı etkilemez |
+| Ne takip? | Veriş tarihi + **tekrar isteme aralığı** | `re_request_days` |
+| Geri alınabilir mi? | **Evet** | Stoğa geri döner, kural uygulanmaz |
+
+**3 tablo:** `office_items` · `office_assignments` · `office_stock_movements`
+(+ `office_item_stock` görünümü). **Hareket `source` alanı:** `manual` |
+`assignment` | `return` — "stok neden azaldı?" sorusu her zaman cevaplanabilir.
+
+**⛔ Ana kural:** `re_request_days` gün geçmeden aynı çalışana tekrar verilemez.
+Mantık saf fonksiyonda: `utils/ofisKural.js` → `istemeKontrol()`.
+
+- **En yeni veriş belirleyicidir** — bir kişide iki açık kayıt varsa eski olanın
+  süresi çoktan dolmuştur. Serbestlik = en büyük tarih. (İlk yazımda en küçük
+  tarih alınıyordu, kural yanlış veri veriyordu.)
+- **Geri alınan kayıt kısıtlamaz.**
+- **Aralık 0** = kısıt yok.
+- İhlal **bilerek aşılabilir** (`zana_kural`) — eldiven kaybolduysa hemen vermek
+  gerekir. Arayüz "Yine de ver" onayı ister.
+
+**⛔ Korumalar:** kişide varken malzeme **silinemez** · stoktan fazlası
+verilemez · veriş kaydı + stok çıkışı **birlikte** yazılır.
 
 ---
 
