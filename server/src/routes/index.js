@@ -19,6 +19,7 @@ import faturaPostaRoutes from './faturaPosta.js';
 import updateRoutes from './update.js';
 import supportRoutes, { bilgiUcunu, bildirUcu } from './support.js';
 import ofisStoguRoutes from './ofisStogu.js';
+import backupRoutes from './backup.js';
 import importEmployeeRoutes from './importEmployee.js';
 import importMusteriRoutes from './importMusteri.js';
 import importUrunRoutes from './importUrun.js';
@@ -124,6 +125,8 @@ router.use('/stock', stockRoutes);
 // ⛔ IS EMRI MALZEMESINDEN AYRI: /products'a dokunmaz, kar marjini etkilemez.
 //    Kendi sayimini tutar (office_stock_movements).
 router.use('/office-stock', ofisStoguRoutes);
+// ⛔ Yedekleme (3 Ekim 2026). Geri yukleme yalnizca yoneticiye acik.
+router.use('/backup', backupRoutes);
 router.use('/users', userRoutes);
 router.use('/activity', activityRoutes);
 router.use('/lookups', lookupRoutes);

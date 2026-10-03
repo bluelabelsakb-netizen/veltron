@@ -8,11 +8,29 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 fs.mkdirSync(path.dirname(config.dbFile), { recursive: true });
 
-export const db = new DatabaseSync(config.dbFile);
+/** Baglantiyi acar (PRAGMA ayarlariyla). */
+export function baglantiAc() {
+  const b = new DatabaseSync(config.dbFile);
+  b.exec('PRAGMA journal_mode = WAL');
+  b.exec('PRAGMA foreign_keys = ON');
+  b.exec('PRAGMA busy_timeout = 5000');
+  return b;
+}
 
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
-db.exec('PRAGMA busy_timeout = 5000');
+/**
+ * ⛔ `const` idi; geri yukleme icin `let` oldu.
+ *    Yedek geri yuklendiginde dosya degisiyor ve SQLite ESKI dosya
+ *    taniyor. Baglanti kapatilip yeniden acilmali.
+ *    Bkz. utils/yedek.js -> yedekGeriYukle()
+ */
+export let db = baglantiAc();
+
+/** Baglantiyi kapatip dosya degistikten sonra yeniden acar. */
+export function baglantiYenile() {
+  try { db.close(); } catch { /* zaten kapali */ }
+  db = baglantiAc();
+  return db;
+}
 
 /**
  * Mevcut tabloya eksik sutun ekler.

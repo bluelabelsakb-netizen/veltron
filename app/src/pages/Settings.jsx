@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast.jsx';
 import { api, dateFmt, dateTimeFmt, getServerUrl, getToken } from '../lib/api.js';
 import { PageHeader, Kpi } from '../components/Primitives.jsx';
 import { FormField, useFormState } from '../components/Form.jsx';
+import { BackupPanel } from '../components/BackupPanel.jsx';
 
 const bridge = typeof window !== 'undefined' ? window.veltron : null;
 
@@ -472,6 +473,9 @@ export default function Settings() {
           </label>
         </div>
       </div>
+
+      {/* ---- ⛔ Yedekleme (3 Ekim 2026) ---- */}
+      <BackupPanel />
 
       {/* ---- Uygulama bilgisi ---- */}
       <div className="card" style={{ marginTop: 14 }}>

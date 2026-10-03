@@ -116,6 +116,7 @@ const DOSYALAR = [
   'aktarmaEkran.test.mjs',
   'ofisKural.test.mjs',
   'ofisStogu.test.mjs',
+  'yedekleme.test.mjs',
   'iletisimKural.test.mjs',
   'karTutarlilik.test.mjs',
   'sqliteKisit.test.mjs',
