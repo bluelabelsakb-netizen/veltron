@@ -683,6 +683,102 @@ CREATE TABLE IF NOT EXISTS counters (
   value INTEGER NOT NULL DEFAULT 0
 );
 
+-- ===============================================================
+-- OFIS STOGU (3 Ekim 2026)
+-- ---------------------------------------------------------------
+-- Kullanici karari: is emri malzemelerinden TAMAMEN AYRI bir liste.
+-- Gerekce: kaynakci eldiveni, is gozlugu, bant, marker gibi malzemeler
+--   - is emrine DUSMEZ, kati maliyeti ETKILEMEZ
+--   - KISIYE verilir (zimmet gibi), istenilen zaman degil, VERILME
+--     zamani ve kac gunde bir yenilenebilecegi takip edilir
+-- Ayri tablo + ayri hareket tablosu kullanildi; `products` tablosuna
+-- karismaz, kar marjini etkilemez.
+-- ===============================================================
+
+-- Ofis / koruyucu malzeme tanimi
+CREATE TABLE IF NOT EXISTS office_items (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  sku             TEXT    UNIQUE,
+  name            TEXT    NOT NULL,
+  category        TEXT,                             -- Eldiven | Gozluk | Is Guvenligi | Kirtasiye
+  unit            TEXT    NOT NULL DEFAULT 'Adet',
+  -- ⛔ ASIL KURAL: bu malzeme kac gunde bir yeniden verilebilir.
+  --    0 = kisit yok (her istediginde verilebilir).
+  --    Eldiven 7, gozluk 365, bant 30 gibi.
+  re_request_days INTEGER NOT NULL DEFAULT 0,
+  min_stock       REAL    NOT NULL DEFAULT 0,       -- kritik stok uyarisi
+  unit_price      REAL    NOT NULL DEFAULT 0,
+  location        TEXT,                             -- dolap / raf
+  notes           TEXT,
+  is_active       INTEGER NOT NULL DEFAULT 1,
+  created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Ofis stogu hareketleri (ayri sayim — is emri stogu DEGILDIR)
+CREATE TABLE IF NOT EXISTS office_stock_movements (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  item_id        INTEGER NOT NULL REFERENCES office_items(id) ON DELETE CASCADE,
+  type           TEXT    NOT NULL,                   -- in|out|adjust
+  quantity       REAL    NOT NULL,
+  movement_date  TEXT    NOT NULL,
+  -- ⛔ Hareketin kaynagi. "out" hareketi kullanici elle yaptiysa
+  --    'manual'; bir calisana verildiyse 'assignment' + assignment_id.
+  --    Boylece "stok neden azaldi" sorusu her zaman cevaplanabilir.
+  source         TEXT    NOT NULL DEFAULT 'manual',
+  assignment_id  INTEGER REFERENCES office_assignments(id) ON DELETE SET NULL,
+  note           TEXT,
+  user_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ⛔ KISIYE VERILEN MALZEME ("zimmet")
+CREATE TABLE IF NOT EXISTS office_assignments (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  item_id       INTEGER NOT NULL REFERENCES office_items(id) ON DELETE CASCADE,
+  employee_id   INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  quantity      REAL    NOT NULL DEFAULT 1,
+  given_at      TEXT    NOT NULL,                    -- VERIS TARIHI
+  -- ⛔ GERI ALINDIGINDA dolulur. NULL = hala kisisinda.
+  returned_at   TEXT,
+  returned_note TEXT,
+  note          TEXT,
+  user_id       INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ---------------------------------------------------------------
+-- Ofis stogu ozeti gorunumu
+-- ---------------------------------------------------------------
+DROP VIEW IF EXISTS office_item_stock;
+CREATE VIEW office_item_stock AS
+SELECT i.id, i.sku, i.name, i.category, i.unit, i.re_request_days,
+       i.min_stock, i.unit_price, i.location, i.notes, i.is_active, i.created_at,
+       COALESCE(SUM(
+         CASE m.type
+           WHEN 'in'  THEN  m.quantity
+           WHEN 'out' THEN -m.quantity
+           ELSE            m.quantity
+         END
+       ), 0) AS stock,
+       -- ⛔ KACISADA KISIYE VERILMIS MIKTAR (geri alinmayanlar).
+       --    "Kimde ne var" sorusunun tek kaynagi: hareketler DEGIL,
+       --    veris kayitlari.
+       COALESCE((
+         SELECT SUM(a.quantity)
+           FROM office_assignments a
+          WHERE a.item_id = i.id
+            AND a.returned_at IS NULL
+       ), 0) AS issued_out,
+       COALESCE((
+         SELECT COUNT(*)
+           FROM office_assignments a
+          WHERE a.item_id = i.id
+            AND a.returned_at IS NULL
+       ), 0) AS person_count
+  FROM office_items i
+  LEFT JOIN office_stock_movements m ON m.item_id = i.id
+ GROUP BY i.id;
+
 -- ---------------------------------------------------------------
 -- Stok ozeti gorunumu
 -- ---------------------------------------------------------------
@@ -736,6 +832,17 @@ CREATE INDEX IF NOT EXISTS idx_labor_wo      ON work_order_labor(work_order_id);
 CREATE INDEX IF NOT EXISTS idx_labor_emp     ON work_order_labor(employee_id);
 CREATE INDEX IF NOT EXISTS idx_womat_wo      ON work_order_materials(work_order_id);
 CREATE INDEX IF NOT EXISTS idx_womat_prod    ON work_order_materials(product_id);
+-- Ofis stogu (3 Ekim 2026)
+CREATE INDEX IF NOT EXISTS idx_offmov_item    ON office_stock_movements(item_id);
+CREATE INDEX IF NOT EXISTS idx_offmov_date    ON office_stock_movements(movement_date DESC);
+CREATE INDEX IF NOT EXISTS idx_offmov_assign  ON office_stock_movements(assignment_id);
+-- ⛔ "Kimde ne var" ekranı hep `returned_at IS NULL` filtresiyle çalışır;
+--    kısmi indeks bunu ucuzlaştırır (kısmi indeks SQLite'ta desteklenir).
+CREATE INDEX IF NOT EXISTS idx_offasg_item    ON office_assignments(item_id);
+CREATE INDEX IF NOT EXISTS idx_offasg_emp     ON office_assignments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_offasg_given   ON office_assignments(given_at DESC);
+CREATE INDEX IF NOT EXISTS idx_offasg_open    ON office_assignments(employee_id, item_id)
+  WHERE returned_at IS NULL;
 -- NOT: Bu iki index bilerek schema.sql'de YOK. `users.customer_id` sonradan
 -- ensureColumn() ile eklendigi icin, sema calistiginda henuz olmayabilir.
 -- Index'ler db.js -> migrate() icinde, sutun eklendikten SONRA kurulur.

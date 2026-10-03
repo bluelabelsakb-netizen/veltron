@@ -114,6 +114,8 @@ const DOSYALAR = [
   'hataGunlugu.test.mjs',
   'paketlenebilirlik.test.mjs',
   'aktarmaEkran.test.mjs',
+  'ofisKural.test.mjs',
+  'ofisStogu.test.mjs',
 ];
 
 /**

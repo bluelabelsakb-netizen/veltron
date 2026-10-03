@@ -18,6 +18,7 @@ import companyRoutes from './company.js';
 import faturaPostaRoutes from './faturaPosta.js';
 import updateRoutes from './update.js';
 import supportRoutes, { bilgiUcunu, bildirUcu } from './support.js';
+import ofisStoguRoutes from './ofisStogu.js';
 import importEmployeeRoutes from './importEmployee.js';
 import importMusteriRoutes from './importMusteri.js';
 import importUrunRoutes from './importUrun.js';
@@ -119,6 +120,10 @@ router.use('/import', importMusteriRoutes);
 router.use('/import', importUrunRoutes);
 router.use('/products', productRoutes);
 router.use('/stock', stockRoutes);
+// Ofis stogu (3 Ekim 2026). Kisiye verilen koruyucu malzeme.
+// ⛔ IS EMRI MALZEMESINDEN AYRI: /products'a dokunmaz, kar marjini etkilemez.
+//    Kendi sayimini tutar (office_stock_movements).
+router.use('/office-stock', ofisStoguRoutes);
 router.use('/users', userRoutes);
 router.use('/activity', activityRoutes);
 router.use('/lookups', lookupRoutes);

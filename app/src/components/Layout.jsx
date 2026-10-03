@@ -5,7 +5,7 @@ import {
   Receipt, Package, ArrowLeftRight, Shield, History, Settings, LogOut,
   Minus, Square, X, ChevronDown, KeyRound, User as UserIcon, Wifi, WifiOff,
   Building, ClipboardList, HardHat, Wallet, TrendingUp, Award, FileSpreadsheet, Upload, CircleDollarSign, Calculator,
-  UserPlus, LifeBuoy,
+  UserPlus, LifeBuoy, HandCoins,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { initials } from '../lib/api.js';
@@ -50,6 +50,9 @@ const NAV_GROUPS = [
       { to: '/maas', label: 'Maaş / Bordro', icon: Wallet },
       { to: '/taseronlar', label: 'Taşeronlar', icon: HardHat, countKey: 'open_subcontractor_jobs' },
       { to: '/urunler', label: 'Ürünler', icon: Package, countKey: 'critical_stock', alert: true },
+      // Ofis stoğu (3 Ekim 2026): kişiye verilen koruyucu malzeme.
+      // ⛔ Ürünlerden AYRI bir liste — iş emri malzemesi değil, kârı etkilemez.
+      { to: '/ofis-stogu', label: 'Ofis Stoğu', icon: HandCoins },
       { to: '/stok-hareketleri', label: 'Stok Hareketleri', icon: ArrowLeftRight },
     ],
   },
@@ -82,6 +85,7 @@ const TITLES = {
   '/calisan-aktar': 'Çalışan İçe Aktarma',
   '/musteri-aktar': 'Müşteri İçe Aktarma',
   '/urun-aktar': 'Ürün İçe Aktarma',
+  '/ofis-stogu': 'Ofis Stoğu',
   '/kar': 'Kâr Raporu',
   '/calisanlar': 'Çalışanlar',
   '/maas': 'Maaş / Bordro',
