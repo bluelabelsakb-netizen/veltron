@@ -177,6 +177,11 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | **Ofis stoğu (kural mantığı)** | `server/src/utils/ofisKural.js` → `istemeKontrol()`, `enErkenTarih()` |
 | Ofis stoğu ucu | `server/src/routes/ofisStogu.js` (`/api/office-stock/*`) |
 | Ofis stoğu ekranı | `app/src/pages/OfficeStock.jsx` |
+| **Sürüm yükseltme komutu** | `tools-src/surum-yukselt.mjs` (3 sürümü birden + Release) |
+| Güncelleme indirme | `server/src/utils/guncelleme.js` |
+| Güncelleme ucu | `server/src/routes/update.js` |
+| Güncelleme arayüzü | `app/src/components/UpdateBanner.jsx` (`UpdateIndicator` + `UpdatePanel`) |
+| Kurulumu başlat (Electron) | `electron/main.mjs` → `app:guncelle-kur` · `preload.cjs` → `guncelleKur()` |
 
 ---
 
@@ -343,6 +348,16 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     tırnak/şablon kaçarlar (`${acik kişide...}` → SyntaxError, `""` ile
     sıralı değer kaybolur). Karmaşık betikleri **dosyaya yaz**, sonra
     `node dosya.mjs` çalıştır.
+38. **⛔ Test içinde kaynak dosyayı DÖNÜŞTÜRME.** Güncelleme testinin
+    ilk yazımı `update.js`'i okuyup `API` sabitini değiştirip geri
+    yazıyordu. Üç denemede de tutmadı (regex, CRLF, `process.argv[1]`
+    test dosyasının kendi yolunu veriyor) ve test sessizce "atlandı".
+    Doğrusu: fonksiyona **parametre** ekle (`githubSorgula({ apiUrl })`).
+    ⛔ Test sessizce "atlandı" diyorsa o dal **başarı sayılmaz** —
+    kırılma sebebini bul, `ok(...)` ile başarısızlığa çevir.
+39. **Regex'te satır sonu `$` ve CRLF.** `/^foo.*;$/m` Windows'ta CRLF
+    dosyada tutmaz (`;` sonrasında `\r` var). Satır sonu yerine satır
+    başı eşleştir veya `\r?$` yaz.
 
 ---
 
@@ -656,6 +671,57 @@ Mantık saf fonksiyonda: `utils/ofisKural.js` → `istemeKontrol()`.
 
 **⛔ Korumalar:** kişide varken malzeme **silinemez** · stoktan fazlası
 verilemez · veriş kaydı + stok çıkışı **birlikte** yazılır.
+
+---
+
+## 5i. Güncelleme Sistemi (3 Ekim 2026)
+
+**Kullanıcının isteği:** "Her seferinde kurulum paketi güncellemektense
+github'dan güncelleme gelsin. Program açılsın, veriler görünsün, işlem
+bitiminde kullanıcı kendi isteğiyle güncellesin ama uyarı geçilsin.
+Kritik güncellemelerde direkt güncelleme alması gerekiyor."
+
+**Akış:**
+
+```
+node tools-src/surum-yukselt.mjs 1.1.0
+  → 3 yerdeki sürümü birlikte günceller (app, server, update.js)
+  → testleri koşar, paketi üretir, GitHub'a Release yayınlar
+Program açılınca → köşe rozeti → kullanıcı "Kur" der
+```
+
+**⛔ SÜRÜM 3 YERDE YAZILI.** `update.js` sunucunun kendi
+`package.json`'ından okuyamaz (build sırasında sunucu çalışmayabilir).
+Unutulursa güncelleme kontrolü **sessizce bozulur**. `surum-yukselt.mjs`
+hepsini birlikte yazar. `...surum-yukselt.mjs kontrol` tutarlılığı doğrular.
+
+**⛔ ORTADAN KESME YOK — en önemli kural.** Kritik sürümde bile program
+kapanmaz/yeniden başlamaz. "Direkt güncelleme" şu demektir:
+
+| | Normal sürüm | Kritik sürüm |
+|---|---|---|
+| Köşe rozeti | Mavi, sönük | **Kırmızı, yanıp söner** |
+| Panel | Elle açılır | **Kendiliğinden açılır** |
+| Kapatma (X) | Var | **Yok** |
+| Dosya indirme | Düğmeye basınca | **Kendi kendine (arka planda)** |
+| Kurulum | "Şimdi güncelle" | 2 dk hareketsizlikte teklif |
+
+Neden: kullanıcı fatura yazarken program kapanırsa girdiği veri uçar.
+Bunu testler de sabitler (`guncellemeUctanUca.test.mjs` bölüm 7:
+`app.quit`, `setInterval`, otomatik kurulum **yok**).
+
+**Kritik işareti:** GitHub Releases'te "kritik" alanı yok. Release
+notlarındaki `<!--kritik:evet-->` veya `KRITIK: evet` satırına bakılır.
+`surum-yukselt.mjs ... kritik` bunu kendisi yazar.
+
+**Güvenlik:** indirme yalnızca `github.com`/`githubusercontent` adresinden;
+`.exe` uzantısı doğrulanır; kısmi dosya "bitti" sayılmaz. Kurulumu
+**Electron** başlatır (sunucu değil) ve yol `server/data/updates/`
+içinde mi diye doğrular.
+
+**`githubSorgula({ apiUrl })`** — ⛔ `apiUrl` SADECE test içindir; sahte
+Release yanıtı vermek için. Gerçek Release yayınlamak kullanıcının
+bilgisayarında sahte "kritik güncelleme" uyarısı bırakırdı.
 
 ---
 
