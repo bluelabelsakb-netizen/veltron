@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { get, run, tx } from '../db.js';
 import { wrap, badRequest } from '../utils/http.js';
 import { logActivity } from '../utils/activity.js';
+import { telefonKontrol, vergiNoKontrol, epostaKontrol } from '../utils/iletisim.js';
 import {
   yukleyiciYap, tabloyuOku, akisYap, metin, epostaGecerliMi, sablonUret,
 } from '../utils/excelAktarma.js';
@@ -75,18 +76,24 @@ const akis = akisYap({
     };
 
     if (!veri.company) return { veri, hata: 'Müşteri ünvanı boş' };
-    if (veri.email && !epostaGecerliMi(veri.email)) {
-      return { veri, hata: `Geçersiz e-posta: ${veri.email}` };
+
+    // ⛔ Telefon: Excel'de telefon YOKTU doğrulaması (3 Ekim 2026).
+    //    Boşluksuz yazılan numara da kabul edilmeli, HATALI olan reddedilmeli.
+    //    Kullanıcı isteği: "0505 342 0223" formatına evrilsin.
+    const tel = telefonKontrol(veri.phone);
+    if (!tel.gecerli) {
+      return { veri, hata: `Geçersiz telefon: ${veri.phone} — ${tel.hata}` };
     }
+    veri.phone = tel.deger;
+
+    const ep = epostaKontrol(veri.email);
+    if (!ep.gecerli) return { veri, hata: `Geçersiz e-posta: ${veri.email}` };
+    veri.email = ep.deger;
 
     // Vergi numarası 10 (VKN) veya 11 (TC) hane olmalı
-    if (veri.tax_number) {
-      const rakam = veri.tax_number.replace(/\D/g, '');
-      if (rakam.length !== 10 && rakam.length !== 11) {
-        return { veri, hata: `Vergi/TC numarası 10 veya 11 haneli olmalı: ${veri.tax_number}` };
-      }
-      veri.tax_number = rakam;
-    }
+    const vkn = vergiNoKontrol(veri.tax_number);
+    if (!vkn.gecerli) return { veri, hata: vkn.hata };
+    veri.tax_number = vkn.deger;
 
     // --- Mevcut kaydı bul
     let mevcutId = null;

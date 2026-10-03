@@ -127,7 +127,10 @@ const customerName = `Test Endustri A.S. ${uniq}`;
 const customer = await test('POST /customers', () =>
   api('POST', '/customers', {
     title: 'Bayi', company: customerName, city: 'Izmir',
-    tax_number: `${100000000 + Number(uniq)}`, contact: 'Ali Veli', phone: '0232 111 22 33', email: 'test@example.com',
+    // ⛔ VKN 10 haneli olmalı (3 Ekim 2026 kuralı). Burada 9 haneli
+    //    `100000000 + uniq` üretiliyordu — kimse doğrulamadığı için fark
+    //    edilmedi. Artık müşteri oluşturma reddediyor.
+    tax_number: `${1000000000 + Number(uniq)}`, contact: 'Ali Veli', phone: '0232 111 22 33', email: 'test@example.com',
   })
 );
 await test('GET /customers (arama ile)', async () => {

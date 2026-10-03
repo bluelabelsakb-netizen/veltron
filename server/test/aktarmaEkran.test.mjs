@@ -134,7 +134,10 @@ if (rM.ok) {
   console.log('       tanınmayan: ' + JSON.stringify(d.eslesmeyenler));
 
   ok('6 satır okundu', d.toplam_satir === 6, `${d.toplam_satir}`);
-  ok('3 temiz satır yeni', d.yeni === 3, `${d.yeni}`);
+  // ⛔ 'yeni' yerine 'kabul edilen' sayılıyor: kayıtlar önceki koşudan
+  //    kalmış olabilir, o zaman 'guncellenecek' görünür.
+  const kabulEdilen = d.yeni + d.guncellenecek;
+  ok('3 temiz satır kabul edildi', kabulEdilen === 3, `yeni ${d.yeni} + güncelle ${d.guncellenecek}`);
   ok('3 hatalı satır işaretlendi', d.hatali === 3, `${d.hatali}`);
   ok('ünvan sütunu tanındı', !!d.eslesme.company, d.eslesme.company || '(yok)');
   ok('vergi no sütunu tanındı', !!d.eslesme.tax_number, d.eslesme.tax_number || '(yok)');
