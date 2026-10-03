@@ -31,8 +31,11 @@ export function gonderimDurumu() {
   if (!config.mail?.gonderici) {
     return { aktif: false, sebep: 'Gonderici e-posta adresi tanimli degil (Ayarlar)' };
   }
-  if (!config.mail?.uygulamaSifresi) {
-    return { aktif: false, sebep: 'Uygulama sifresi tanimli degil (server/.env)' };
+  // ⛔ ESKIDEN BURASI "uygulamaSifresi" arıyordu (SMTP kavramı).
+  //   OAuth modunda gerekli olan clientId + clientSecret + refreshToken.
+  //   Üçü de .env'de doluyken program "kapali" diyordu — 3 Ekim 2026.
+  if (!config.mail?.clientId || !config.mail?.clientSecret || !config.mail?.refreshToken) {
+    return { aktif: false, sebep: 'Gmail yetki bilgileri eksik (server/.env)' };
   }
   return { aktif: true, sebep: 'Hazir' };
 }

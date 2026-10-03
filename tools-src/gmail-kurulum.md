@@ -283,3 +283,125 @@ Sadece senin hesabınla giriyorsun, sorun değil.
 
 *Hazırlayan: Veltron · 1 Ekim 2026*
 *Bu dosyayı değiştirdiysen `AGENTS.md` Bölüm 5d'ye kısaca ekle.*
+---
+
+## GERCEK KURULUMDA TAKILAN YERLER (3 Ekim 2026)
+
+Bu liste, kurulumu ilk kez yapan birinin **gercekten nerede durdugunu**
+kaydeder. Yukaridaki "8 adim" genel; asagidakiler somut.
+
+### 1. "Kullanici destegi e-postasi" serbest yazilamaz
+
+Google bu alanda **sadece o Cloud hesabina bagli mail hesaplarini**
+listeler. Firmanin kendi adresini (info@firma.com) yazamazsin.
+→ Listeden kendi hesabini sec. **Benim "firma adresini secebilirsin"
+tanim yanlisti.**
+
+### 2. Chrome otomatik cevirisi ekrani bozuyor
+
+Ceviri acikken "OAuth Istemci Kimligi", "Yonlendirme URI'leri" gibi
+terimler kayboluyor ve **"farkli mail giremiyorum" gibi baska hatalara
+yol aciyor** (alan aslinda zaten kilitli).
+→ Adres cubugundaki ceviri simgesine bas → "Never translate this site".
+
+### 3. Gmail API'yi ETKINLESTIRME adimi atlama
+
+Yapilmazsa Credentials ekraninda "No API keys to display" cikar ve
+jeton alinamaz.
+→ APIs & Services → Library → Gmail API → **Enable**
+
+### 4. Redirect URI tam olarak bu olmali
+
+    https://developers.google.com/oauthplayground
+
+Satir atlarsa **jeton alinamaz ve HICBIR hata mesaji cikmaz** — sessiz
+kalan tek adim budur.
+
+### 5. "Publish app" düğmesi Branding tamamlanmadan canlanmiyor
+
+Test kullanıcısını ekledin ama Publish app **soluk** kalıyor. Sebep:
+Branding sayfasında 5 alan zorunlu.
+
+| Alan | Zorunlu |
+|---|---|
+| App name | evet |
+| User support email | evet |
+| Developer contact email | evet |
+| Application home page | **evet** |
+| Application privacy policy link | **evet** |
+
+### 6. ⛔ .local ADRESI KABUL EDILMIYOR
+
+Ilk verdiğim https://veltron.local **hataliydi**. .local yerel ag
+icindir, Google erisemez ve su uyariyi verir:
+
+    Missing domain: veltronmakine.com
+
+→ **Gercek bir alan adi** kullan. Site yayinda olmak zorunda degil;
+Google o adreslere ziyaretci gondermiyor, sadece bicim kontrol ediyor.
+Alan adin yoksa test icin ayrilmis https://veltron-ornek.example.com
+yazilir.
+
+### 7. Refresh token'i sohbete YAZMA
+
+Token = tam Gmail erisimi, sohbet gecmise kalir.
+→ Bir dosyaya yapistir, ben okuyup .env'ye yazayim, sonra dosyayi sil.
+
+### 8. "Your app requires verification" HARi DEGIL
+
+Publish sonrasi bu uyari cikar. Dogrulama **istege baglidir**; tek
+kullanici icin gerekmez. Panik yapma, gec.
+
+---
+
+## KISA OZET — 6 adimda
+
+    1. console.cloud.google.com → Yeni proje: Veltron
+    2. APIs & Services → Library → Gmail API → ENABLE
+    3. APIs & Services → Credentials → + CREATE CREDENTIALS
+       → OAuth client ID → Web application
+       → Name: Veltron Mail
+       → Authorized redirect URIs: https://developers.google.com/oauthplayground
+       → (JavaScript origins BOS birak)
+       → CREATE   → Client ID + Client secret cikar
+    4. APIs & Services → Audience → BRANDING sekmesi
+       → App name, support email, developer email,
+         home page : https://<GERCEK ALAN ADIN>
+         privacy   : https://<GERCEK ALAN ADIN>/gizlilik
+       → SAVE
+    5. Audience → Test users → kendi mailini ekle
+       → PUBLISH APP → In production → Publish
+       ⛔ 2-3 dakika bekle (yayin gecikmesi)
+    6. developers.google.com/oauthplayground
+       → ⚙ → Use your own OAuth credentials (isaretli)
+              + Client ID + Client secret
+       → Input your own scopes : https://mail.google.com/
+       → Authorize APIs → hesabini sec → Allow
+         (kirmizi uyari: Advanced → "Go to Veltron Mail (unsafe)")
+       → Step 2 → "Exchange authorization code for tokens"
+       → refresh_token degerini kopyala
+
+---
+
+## .env'e yazilacaklar
+
+    MAIL_FROM=veltronyedek@gmail.com
+    MAIL_FROM_NAME=Veltron
+    MAIL_CLIENT_ID=...
+    MAIL_CLIENT_SECRET=...
+    MAIL_REFRESH_TOKEN=...
+
+⛔ MAIL_APP_PASSWORD **gerekmiyor.** O alan eski SMTP kavramindan
+kalma; gonderimDurumu() onu ariyordu ve uc deger de doluyken program
+"kapali" diyordu. 3 Ekim'de duzeltildi: artik clientId + clientSecret +
+refreshToken aranir.
+
+## Dogrulama
+
+**Ayarlar → Fatura gonderimi** → "Test Et".
+Gelen kutusuna Veltron — e-posta gonderim testi baslikli mail duserse
+hazir.
+
+⛔ Client secret ekrana yapistirilmis olabilir. Yerel masaustu
+uygulamasi icin kritik degil (zaten kendi bilgisayarinda duruyor), ama
+bilerek not dusuldu.
