@@ -806,6 +806,48 @@ CREATE TABLE IF NOT EXISTS invoice_attachments (
 CREATE INDEX IF NOT EXISTS idx_invatt_invoice
   ON invoice_attachments(invoice_id);
 
+-- ===============================================================
+-- ALACAK HATIRLATMALARI (3 Ekim 2026)
+--
+-- ⛔ invoice_emails DEGIL. O tablo faturanin kendisinin gonderildigini
+--    tutar. Bu tablo "vadesi gecmis faturalar icin ayri hatirlatma"
+--    gonderildigini tutar. Ikisi farkli sey: fatura 3 Eylul'de gitti,
+--    hatirlatma 20 Ekim'de gitti.
+--
+-- ⛔ ONCEKI gONDERIMLER KORUMASI: `day` sutunu (YYYY-MM-DD) sayesinde
+--    "bu musteriye bugun zaten gonderdim" sorusu 1 sorguda cevaplanir.
+--    Kullanici karari (3 Ekim): hatirlatma TEK TIKLA + ONIZLE, otomatik
+--    degil. Ayni gun ikinci kez gondermesi bu kayda bakilarak engellenir.
+--
+-- ⛔ `invoice_numbers` metin olarak saklanir (virgulle ayrilmis numaralar).
+--    Yabancı anahtar DEĞIL: fatura silinse bile "once su faturayi
+--    hatirlattim" bilgisi kaybolmamali — karsi tarafla tartisma olursa
+--    kanit degerindedir.
+-- ===============================================================
+CREATE TABLE IF NOT EXISTS payment_reminders (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id     INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  invoice_ids     TEXT    NOT NULL,        -- "12,15,19"
+  invoice_numbers TEXT    NOT NULL,        -- "FTR-2026-0255,FTR-2026-0260"
+  amount_total    REAL    NOT NULL DEFAULT 0,
+  recipient       TEXT,                    -- kime gonderildi
+  recipient_name  TEXT,
+  subject         TEXT,
+  body            TEXT,                    -- gonderilen metin (kanit)
+  status          TEXT    NOT NULL DEFAULT 'sent',  -- sent | failed
+  error           TEXT,
+  has_pdf         INTEGER NOT NULL DEFAULT 1,
+  user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  day             TEXT    NOT NULL DEFAULT (date('now')),  -- YYYY-MM-DD
+  created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Ayni musteriye ayni gun ikinci kez gonderimi bulmak icin
+CREATE INDEX IF NOT EXISTS idx_reminder_cust_day
+  ON payment_reminders(customer_id, day);
+CREATE INDEX IF NOT EXISTS idx_reminder_created
+  ON payment_reminders(created_at);
+
 -- ---------------------------------------------------------------
 -- Stok ozeti gorunumu
 -- ---------------------------------------------------------------

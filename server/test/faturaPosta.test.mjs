@@ -249,6 +249,11 @@ if (!token) {
   ok('invoice_layout alani var', 'invoice_layout' in (profil.veri?.data ?? {}));
 
   const gecerli = { ...profil.veri.data, marka_color: '#0F766E' };
+  // ⛔⛔ BU BLOK GERÇEK VERİTABANINA YAZIYOR. Test sonunda GERİ ALINMALI.
+  //   Önceki hâli marka rengini ve şablon adını değiştirip BIRAKIYORDU;
+  //   kullanıcının firma profisi kalıcı bozuluyordu.
+  //   Ders: AGENTS.md tuzak 34 (testler gerçek veri siler) — bir kopyası.
+  const ESKI = { ...profil.veri.data };
   const kayit = await istek('/company', {
     method: 'PUT', token, body: gecerli,
   });
@@ -268,6 +273,14 @@ if (!token) {
   const sablon = { ...profil.veri.data, invoice_layout: 'fatura.html' };
   const sablonSonuc = await istek('/company', { method: 'PUT', token, body: sablon });
   ok('gecerli sablon adi kabul edilir', sablonSonuc.status === 200, `status ${sablonSonuc.status}`);
+
+  // ---------------------------------------------------------- ⛔ GERİ AL
+  const geriAl = await istek('/company', { method: 'PUT', token, body: ESKI });
+  ok('⛔ marka rengi geri alindi', geriAl.veri?.data?.marka_color === ESKI.marka_color,
+    `${geriAl.veri?.data?.marka_color} (onceki: ${ESKI.marka_color})`);
+  ok('⛔ sablon adi geri alindi', geriAl.veri?.data?.invoice_layout === ESKI.invoice_layout,
+    `${geriAl.veri?.data?.invoice_layout} (onceki: ${ESKI.invoice_layout})`);
+  ok('⛔ firma adi degismedi', geriAl.veri?.data?.name === ESKI.name, geriAl.veri?.data?.name);
 }
 
 // =================================================== 13-14. DURUM

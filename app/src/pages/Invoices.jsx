@@ -21,6 +21,7 @@ import { FormField, useFormState } from '../components/Form.jsx';
 import { PageHeader, Kpi, KpiMoney, EmptyState } from '../components/Primitives.jsx';
 import { MiniTable } from '../components/DataTable.jsx';
 import { InvoiceSendModal } from '../components/InvoiceSendModal.jsx';
+import { AlacakPanel } from '../components/AlacakPanel.jsx';
 
 const METHOD_ICONS = { nakit: Banknote, havale: Wallet, kredi_karti: CreditCard, cek: FileText, baska: Wallet };
 const METHOD_LABELS = Object.fromEntries(PAYMENT_METHOD_OPTIONS.map((o) => [o.value, o.label]));
@@ -37,6 +38,13 @@ export default function Invoices() {
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  /**
+   * ⛔ SEKME — 'fatura' | 'alacak' (3 Ekim 2026)
+   * Kullanıcı kararı: alacak listesi AYRI EKRAN DEĞİL, bu ekranın içinde
+   * bir sekme. Sebep: "alacak takibi" zaten bu sayfanın açıklamasında yazılı;
+   * ayrı menü girdisi ekranı kalabalıklaştırıp aramayı zorlaştırırdı.
+   */
+  const [sekme, setSekme] = useState('fatura');
   const [editing, setEditing] = useState(null);
   const [detail, setDetail] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -103,12 +111,37 @@ export default function Invoices() {
         title="Faturalar ve Tahsilat"
         description="Fatura kesme, kısmi tahsilat ve alacak takibi"
         actions={
-          <button className="btn btn-primary" onClick={() => setEditing('new')}>
-            <Plus size={15} />
-            Yeni Fatura
-          </button>
+          sekme === 'fatura' ? (
+            <button className="btn btn-primary" onClick={() => setEditing('new')}>
+              <Plus size={15} />
+              Yeni Fatura
+            </button>
+          ) : null
         }
       />
+
+      {/* ⛔ Sekme çubuğu. Alacak sekmesi kullanıcı kararıyla burada. */}
+      <div className="tabs">
+        <button className={`tab ${sekme === 'fatura' ? 'active' : ''}`} onClick={() => setSekme('fatura')}>
+          <Receipt size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+          Faturalar
+        </button>
+        <button className={`tab ${sekme === 'alacak' ? 'active' : ''}`} onClick={() => setSekme('alacak')}>
+          <TrendingUp size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+          Alacak
+          {overdueRows.length ? (
+            <span
+              className="badge danger"
+              style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px' }}
+            >
+              {overdueRows.length}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      {sekme === 'alacak' ? <AlacakPanel /> : (
+        <>
 
       <div className="kpi-grid">
         <KpiMoney
@@ -327,6 +360,7 @@ export default function Invoices() {
         />
       ) : null}
 
+      {/* ------------------------------------------------ fatura sekmesi */}
       {detail ? (
         <InvoiceDetail
           invoiceId={detail.id}
@@ -355,6 +389,8 @@ export default function Invoices() {
             : ''
         }
       />
+        </>
+      )}
     </>
   );
 }

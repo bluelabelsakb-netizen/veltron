@@ -82,7 +82,10 @@ export function useLicense() {
 
 const AKTIF_FIELDS = [
   { name: 'key', label: 'Lisans anahtarı', required: true, span: 2, placeholder: 'VELTRON-XXXX-XXXX-XXXX' },
-  { name: 'customer_name', label: 'Firma adı', span: 2, placeholder: 'Örn. Deniz Demir Çelik A.Ş.' },
+  // ⛔ Yer tutucu gerçek bir müşteri gibi GÖRÜNMEMELİ. "Örn. Deniz Demir
+  //    Çelik A.Ş." vardı; o isim demo müşteri listesinde de geçiyordu ve
+  //    kullanıcı Firma Profili'ne bu haliyle kaydetmişti. 3 Ekim 2026.
+  { name: 'customer_name', label: 'Firma adı', span: 2, placeholder: 'Lisans sahibi firmanın ünvanı' },
 ];
 
 function LicensePanel({ onClose, onChanged }) {

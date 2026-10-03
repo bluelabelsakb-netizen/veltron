@@ -24,9 +24,20 @@ const ADIMLAR = [
   { anahtar: 'bitti', baslik: 'Hazır', ikon: PartyPopper },
 ];
 
+/**
+ * ⛔ ÖRNEK ADLAR GERÇEK GİBİ GÖRÜNMEMELİ (3 Ekim 2026)
+ *
+ * Burada "Örn. Deniz Demir Çelik A.Ş." yazıyordu. O isim:
+ *   a) `server/src/scripts/demo-kur.js` içinde bir DEMO MÜŞTERİ olarak da
+ *      tanımlı — yani "kendi müşterisi gibi" görünüyordu,
+ *   b) Kullanıcı Firma Profili'ne bu ismi KAYDETMİŞTİ.
+ * Sonuç: her fatura PDF'i ve e-posta imzası, müşterinin adıyla çıkıyordu.
+ * ⛔ Yer tutucu, kullanıcının yanlışlıkla kaydedebileceği kadar gerçekçi
+ *    olmamalı. Artık kasten anlamsız.
+ */
 const FIRMA_FIELDS = [
-  { name: 'name', label: 'Firma adı *', span: 2, required: true, placeholder: 'Örn. Deniz Demir Çelik A.Ş.' },
-  { name: 'short_name', label: 'Kısa ad', span: 2, placeholder: 'Evraklarda kısa görünsün (örn. DENİZ)' },
+  { name: 'name', label: 'Firma adı *', span: 2, required: true, placeholder: 'Kendi şirketinizin tam ünvanı' },
+  { name: 'short_name', label: 'Kısa ad', span: 2, placeholder: 'Evraklarda kısa görünsün (örn. VELTRON)' },
   { name: 'tax_office', label: 'Vergi dairesi', span: 1 },
   { name: 'tax_number', label: 'Vergi / TC kimlik no', span: 1 },
   { name: 'phone', label: 'Telefon', span: 1 },

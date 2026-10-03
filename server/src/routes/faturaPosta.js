@@ -35,7 +35,14 @@ const SERVER_KOK = path.resolve(BURADA, '..', '..'); // server/
 const SCRIPTS = path.join(SERVER_KOK, 'src', 'scripts');
 
 /** Fatura + kalemler + firma + musteri verisini tek yerden toplar. */
-function faturaVerisi(id) {
+/**
+ * ⛔ DIŞA AKTARILIYOR (3 Ekim 2026 — alacak hatırlatması)
+ * `routes/alacak.js` vadesi geçen faturaların PDF'ini de eklemek
+ * istiyor. Bu fonksiyonların KOPYASI alınırsa, `templates/fatura.html`
+ * değiştiğinde hatırlatma ekleri eski tasarımda kalır — sessizce iki
+ * farklı fatura görünümü olur. Tek kaynak: buradan import et.
+ */
+export function faturaVerisi(id) {
   const fatura = get('SELECT * FROM invoices WHERE id = ?', [id]);
   if (!fatura) throw notFound('Fatura bulunamadi');
 
@@ -55,7 +62,7 @@ function faturaVerisi(id) {
  * HTML -> PDF (Electron/Chromium ile).
  * @returns {Promise<Buffer>}
  */
-function pdfUret(html, geciciAd) {
+export function pdfUret(html, geciciAd) {
   return new Promise((cozumle, reddet) => {
     const electronYol = path.join(SERVER_KOK, '..', 'node_modules', 'electron', 'dist', 'electron.exe');
     const exe = fs.existsSync(electronYol) ? electronYol : process.execPath;
@@ -98,7 +105,7 @@ function pdfUret(html, geciciAd) {
 }
 
 /** Fatura HTML'ini üretir (PDF ucu ve e-posta ucu ortak kullanır). */
-function htmlUret(veri) {
+export function htmlUret(veri) {
   const { fatura, kalemler, firma, musteri } = veri;
   const sonuc = faturaHtml({
     firma,

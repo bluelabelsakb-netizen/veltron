@@ -16,6 +16,7 @@ import activityRoutes from './activity.js';
 import lookupRoutes from './lookups.js';
 import companyRoutes from './company.js';
 import faturaPostaRoutes from './faturaPosta.js';
+import alacakRoutes from './alacak.js';
 import updateRoutes from './update.js';
 import supportRoutes, { bilgiUcunu, bildirUcu } from './support.js';
 import ofisStoguRoutes from './ofisStogu.js';
@@ -99,11 +100,14 @@ router.use('/employees', employeeRoutes);
 router.use('/projects', projectRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/quotes', quoteRoutes);
-// ⚠️ SIRA KRİTİK: faturaPostaRoutes ÖNCE kaydedilir.
-// invoices.js içinde `GET /:id` var; o rota "/gonderim-durumu" gibi sabit
-// yolları da yakalar ve "id=NaN" arar -> "Fatura bulunamadi" hatası.
-// Express ilk eşleşen rotayı çalıştırdığı için bizim dosyamız önce gelmeli.
+// ⚠️ SIRA KRİTİK: faturaPostaRoutes ve alacakRoutes ÖNCE kaydedilir.
+// invoices.js içinde `GET /:id` var; o rota "/gonderim-durumu" ve
+// "/alacak" gibi sabit yolları da yakalar ve "id=NaN" arar ->
+// "Fatura bulunamadi" hatası.
+// Express ilk eşleşen rotayı çalıştırdığı için bizim dosyalarımız önce gelmeli.
+// ⛔ Bu sıra bozulursa alacak ekranı "Fatura bulunamadi" der.
 router.use('/invoices', faturaPostaRoutes);
+router.use('/invoices', alacakRoutes);
 router.use('/invoices', invoiceRoutes);
 // Güncelleme kontrolü — GitHub Releases'ten sürüm sorar (2 Ekim 2026).
 // Sıra önemli değil: /update/check sabit yol.
