@@ -779,6 +779,33 @@ SELECT i.id, i.sku, i.name, i.category, i.unit, i.re_request_days,
   LEFT JOIN office_stock_movements m ON m.item_id = i.id
  GROUP BY i.id;
 
+-- ===============================================================
+-- FATURA EKLERI (3 Ekim 2026)
+-- Faturaya iliştirilecek belgeler. Sektöre özel DEĞİL: asfalt işinde
+-- tartım kâğıdı, eczanede reçete, nakliyecide irsaliye aynı yerden.
+-- Fatura bir iş emrine bagliysa o iş emrinin ekleri otomatik gelir.
+-- ===============================================================
+-- ⛔ DEPOLAMA: BLOB DEGIL, DISK. `work_order_attachments` ile ayni desen
+--    (stored_name = UUID, relative_path = uploads/2026-10/xxx.pdf).
+--    Ilk denemede `data BLOB` yazildi; `no such column: data` hatasi
+--    verdi cunku ekler diske yaziliyor. 3 Ekim 2026.
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id   INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  kind         TEXT    NOT NULL DEFAULT 'belge',
+  file_name    TEXT    NOT NULL,          -- kullaniciya gorunen ad
+  stored_name  TEXT    NOT NULL,          -- diskteki gercek ad (UUID)
+  relative_path TEXT   NOT NULL,          -- uploads/2026-10/xxx.pdf
+  mime_type    TEXT    NOT NULL DEFAULT 'application/octet-stream',
+  size_bytes   INTEGER NOT NULL DEFAULT 0,
+  note         TEXT,
+  uploaded_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_invatt_invoice
+  ON invoice_attachments(invoice_id);
+
 -- ---------------------------------------------------------------
 -- Stok ozeti gorunumu
 -- ---------------------------------------------------------------

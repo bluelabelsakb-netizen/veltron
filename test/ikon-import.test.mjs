@@ -47,7 +47,11 @@ for (const dosya of dosyalar) {
   const tanimli = new Set();
 
   // 1) import { A, B as C } from '...'
-  for (const m of c.matchAll(/import\s*\{([\s\S]*?)\}\s*from/g)) {
+  //    ⛔ AYRICA `import X, { A, B } from '...'` biçimini de yakalamalı.
+  //    Eski desen `import\s*\{` idi ve "import" ile "{" arasında
+  //    `UpdatePanel, ` gördüğü için ATLADI; sonuç: `UpdateIndicator`
+  //    "tanımsız" sayılıp test kırıldı, ama kod doğruydu (derleme geçti).
+  for (const m of c.matchAll(/import\s+(?:[A-Za-z_$][\w$]*\s*,\s*)?\{([\s\S]*?)\}\s*from/g)) {
     for (const parca of m[1].split(',')) {
       const temiz = parca.trim().replace(/\/\/.*$/, '').trim();
       if (!temiz) continue;

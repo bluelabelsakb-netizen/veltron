@@ -142,6 +142,32 @@ Motor: `server/src/utils/payroll.js` · Test: `payroll.test.mjs` (69)
 Her sorguya `customer_id` filtresi koy. Liste ucunu açık bırakma.
 Ayrıntı: `MUSTERI-PORTALI.md`
 
+### 2.9 Fatura Belge Paketi (3 Ekim 2026)
+
+Fatura e-posta ile gönderilirken **belgeler de eklenebilir.**
+
+| | |
+|---|---|
+| Fatura kâğıdı (PDF) | Her zaman eklenebilir, varsayılan açık |
+| Faturaya yüklenmiş belgeler | Sözleşme, tutanak, ek sayfa → elle yüklenir |
+| **İş emrine bağlı belgeler** | Fatura iş emrine bağlıysa **otomatik gelir** |
+
+⛔ **SEKTÖRE ÖZEL DEĞİL.** Alan adı `kind`, varsayılan değeri `belge`.
+"Tartım kâğıdı" bizim işimize özgü; nakliyecide irsaliye, eczanede reçete,
+yazılım şirketinde sözleşme aynı yerde. **Program satılacak** — sektöre
+gömülü kod yazma.
+
+Kullanıcı kararı (3 Ekim): *"hem benim hem onların işine yarayacak şekilde"*
+→ müşteri kanıt görür (itiraz azalır), şirket profesyonel görünür.
+
+Motor: `server/src/utils/faturaEk.js` ·
+Uç: `POST|GET /api/invoices/:id/ekler`, `DELETE /api/invoices/ekler/:ekId` ·
+Arayüz: `InvoiceSendModal.jsx` · Test: `faturaEkleri.test.mjs` (32)
+
+**Gmail ek sınırı 25 MB.** Toplam 22 MB'ı aşarsa gönderim **sessizce
+kırpılmaz**, kullanıcıya 413 ile "ekler çok büyük" denir. (Sessiz kırpma
+kullanıcının gönderdiğini sandığı belgeden yoksun kalması demektir.)
+
 ---
 
 ## 3. Kod Haritası
@@ -151,6 +177,11 @@ Ayrıntı: `MUSTERI-PORTALI.md`
 | **Tartım / net kg mantığı** | `server/src/routes/workOrders.js` → `netOf()`, `amountOf()`, `divisorFor()` |
 | Tablolar, ilişkiler | `server/src/schema.sql` |
 | **Şema göçü (yeni sütun)** | `server/src/db.js` → **`ensureColumn()`** |
+| **`.env` yüklenmesi (cwd tuzağı)** | `server/src/config.js` → `dotenv.config({ path: serverRoot/.env })` |
+| **Fatura ekleri (belge paketi)** | `server/src/utils/faturaEk.js` |
+| **Fatura e-postası ucu** | `server/src/routes/faturaPosta.js` |
+| **Gönderim penceresi (arayüz)** | `app/src/components/InvoiceSendModal.jsx` |
+| İş emri ekleri (TIR fotoğrafı) | `server/src/routes/attachments.js` |
 | Yapılandırma (port, db yolu, CORS) | `server/src/config.js` |
 | Giriş koruması (başarısızlık sayacı) | `server/src/utils/loginGuard.js` |
 | Kâr hesabı | `server/src/routes/profit.js` |
@@ -359,6 +390,79 @@ Ayrıntı: `MUSTERI-PORTALI.md`
     dosyada tutmaz (`;` sonrasında `\r` var). Satır sonu yerine satır
     başı eşleştir veya `\r?$` yaz.
 
+40. **⛔⛔ `import 'dotenv/config'` KURULU PROGRAMDA `.env`'İ HİÇ OKUMAZ.** Bu,
+    projedeki en pahalı sessiz hatadır (3 Ekim 2026).
+    - `dotenv/config` `.env`'yi **`process.cwd()`**'den arar.
+    - Geliştirirken sunucuyu `WorkingDirectory=server/` ile başlatırsın,
+      çalışır. Kurulumda `schtasks /TN "Veltron Sunucu"` görevinin
+      **"Start In: N/A"** değeridir → cwd `C:\Windows\System32` olur →
+      `.env` bulunamaz.
+    - ⛔ Belirti: kurulu programda Gmail'e bağlı olmasına rağmen
+      *"E-posta gönderimi kapalı — Gonderici e-posta adresi tanimli degil"*
+      derdi. `JWT_SECRET`, `ADMIN_PASSWORD`, `MAIL_*` — **hiçbiri** yüklenmişti.
+      Kaynak sunucuda aynı `.env` ile sorunsuz çalıştığı için "ayar yok" sanıldı.
+    - **Düzeltme:** `server/src/config.js` artık `serverRoot`'tan yükler:
+      ```js
+      dotenv.config({ path: path.join(serverRoot, '.env') });
+      dotenv.config();   // geliştirmede cwd'dekini de okur; dotenv üzerine yazmaz
+      ```
+    - ⛔ `src/` içinde `import 'dotenv/config'` **yeniden yazma**. Sadece
+      `config.js` yükler.
+    - Test: `server/test/envKonumu.test.mjs` cwd'yi boş bir klasöre ve
+      `System32`'ye çekip sınıyor.
+
+41. **⛔ Ek dosyalar BLOB DEĞİL, DİSKTE.** `work_order_attachments` ve
+    `invoice_attachments` ikisi de `stored_name` (UUID) + `relative_path`
+    (`uploads/2026-10/xxx.pdf`) tutar. İlk yazımda `data BLOB` yazıldı,
+    `no such column: data` hatası verdi. **Bunu yapma.**
+
+42. **⛔ Göreli yol ayırıcısı HER ZAMAN `/` olsun.** `path.relative()` Windows'ta
+    `\` üretir. Veritabanı Linux'a taşınırsa dosyalar kaybolur. Yazarken
+    `.split(path.sep).join('/')`, okurken `replace(/\\/g, '/')`.
+
+43. **⛔ `SELECT` listesinde yol sütunu UNUTMA.** `ekleriGetir()` önce
+    `relative_path`'i seçmedi; `oku(undefined)` hata verip `catch` ile
+    yutuldu ve **TÜM ekler sessizce kayboldu** — liste "3 adet" derken
+    gönderimde 0 belge gidiyordu. Dosya okuyan her sorguya gerekli
+    sütunu açıkça yaz.
+
+44. **⛔ Testte boş dizi `.every()`/`.some()` ile "geçer" sayılabilir.**
+    `[].every(...)` her zaman `true` döner. Bu yüzden ilk ek testi
+    "0 fatura eki" notuyla sessizce geçti ve 43'teki gerçek hata
+    görünmedi. **Önce `length > 0` doğrula, sonra içerik kontrolü yap.**
+
+45. **⛔ Multer `diskStorage` kullan, `memoryStorage` değil.** Bellek depolama
+    8 MB sınırını zorlar, büyük TIR fotoğraflarında patlar ve gönderim
+    anında tüm dosyalar bellekte tutulur. `routes/attachments.js` desenini
+    kopyala: ay-ay klasörü + UUID ad + `IZINLI_TUR` filtresi.
+
+46. **⛔ Ek yükleme alan adı `file` (proje standardı).** `attachments.js` ve
+    tüm arayüz `fd.append('file', ...)` kullanıyor. `dosya` yazan uç
+    `Beklenmeyen dosya alanı` hatası verir.
+
+47. **⛔ PENCERE ÇERÇEVESİZ (`frame: false`). Başlık çubuğu ŞART.**
+    `main.mjs`'te `frame: false` olduğu için pencerenin küçült/büyüt/kapat
+    düğmeleri **yalnızca `Layout.jsx`'in içinde** yaşıyordu. Giriş
+    ekranında o düğmeler hiç yoktu → kullanıcı giriş yapmadan programı
+    kapatamıyordu (Alt+F4 dışında). Sunucu kapalı olduğunda giriş ekranı
+    AÇILAN EKRAN olduğu için en kötü yerdeydi.
+    - Düğmeler artık `app/src/components/WindowControls.jsx` içinde.
+      ⛔ **Bu kodu ikinci yere kopyalama**, bileşeni kullan.
+    - ⛔ `window.veltron` yoksa (tarayıcıda, preload yüklenememişse)
+      bileşen `null` döner ve hiç render edilmez.
+
+48. **⛔ `display: block` butonu `text-align: center` ile ORTALAMAZ.**
+    `text-align` yalnızca kutu İÇİNDEKİ satırı kaydırır, kutunun kendisini
+    kaydırmaz. `display: block` verilmiş bir buton sol kenarına yapışır.
+    Giriş ekranında ölçüldü: "Destek" butonunun merkezi kartın merkezinden
+    **93px soldaydı**. Çözüm: `.auth-foot-block { display:block; margin: 9px auto 0; }`
+    ⛔ Bir hizanı "görünüyor mu" diye değil, **CDP ile ölçerek** teyit et.
+
+49. **⛔ Başlık çubuğu boş alanı `drag`, düğmeleri `no-drag` olmalı.**
+    `.auth-titlebar { -webkit-app-region: drag }` ve
+    `.win-controls { -webkit-app-region: no-drag }` (styles.css). Tersi
+    olursa düğmeye tıklamak pencereyi sürükler.
+
 ---
 
 ## 5f. Marka (2 Ekim 2026)
@@ -563,10 +667,23 @@ adı (yol kaçışı engelli).
 `.env`'den OAuth bilgileri okunur. Günlük kota 450, geçmiş `invoice_emails`
 tablosuna yazılır. Kurulum adım adım: **`tools-src/gmail-kurulum.md`**.
 
+⛔ **Gerekli `.env` değerleri:** `MAIL_FROM`, `MAIL_CLIENT_ID`,
+`MAIL_CLIENT_SECRET`, `MAIL_REFRESH_TOKEN`. `MAIL_APP_PASSWORD`
+**gerekmiyor** (eski SMTP kavramı). `gonderimDurumu()` 3 Ekim'de yanlışlıkla
+`uygulamaSifresi`'yi arıyordu; üçü de doluyken program "kapalı" diyordu.
+
+⛔ **`.env` kurulumda okunmuyordu** — tuzak 40'a bak. Bu yüzden Gmail'e bağlı
+olmasına rağmen kurulu program "kapalı" diyordu. `envKonumu.test.mjs` bunu
+korumaya alır.
+
 **⛔ Route sırası tuzağı:** `faturaPostaRoutes`, `routes/index.js`'te
 `invoiceRoutes`'ten **önce** kaydedilmeli. `invoices.js`'teki `GET /:id`
 rotası `/gonderim-durumu` gibi sabit yolları da yakalar, `"id=NaN"` arar ve
 "Fatura bulunamadi" hatası verir. Bu oldu, düzeltildi — sırayı bozma.
+
+⛔ Aynı sebeple **silme ucu `/ekler/:ekId`** şeklindedir, `/:id/ekler` DEĞİL:
+`/invoices/ekler/5` hem "5 numaralı ek" hem "ekler" adlı bir işlem gibi
+okunabilir.
 
 **Kullanılmayan dosyalar:** `pdfAltyapi.js` ve `faturaPdf.js` (elle kodlanmış
 PDF denemesi). Tasarım koda gömüldüğü ve xref ofsetleri bozuk çıktığı için
@@ -784,23 +901,34 @@ git push        # BİTMEDEN ÖNCE — her zaman
 - Aile erişimi (Cloudflare Tunnel), güvenlik denetimi
 - **`Veltron-Ac.bat`** — tek tıkla açma (sunucu + program birlikte)
 - Program ikonu (`app/electron/icon.png`)
-- **Hata günlüğü + destek sayfası** (bkz. 5g) — 585 test geçiyor
-  (13 dosya: 57 + 32 + 69 + 119 + 31 + 23 + 24 + 34 + 39 + 31 + 62 + 52 + 12)
-- **Kurulum paketi** — USB-Yedek, Node.js'siz tek tıkla kurulum (bkz. 5g)
+- **Hata günlüğü + destek sayfası** (bkz. 5g)
+- **Fatura e-postası** — Gmail HTTPS API + OAuth jetonu (bkz. 2.9, 5h)
+  Kurulum kılavuzu: `tools-src/gmail-kurulum.md` (gerçekte takılan 8 nokta)
+- **Fatura belge paketi** — fatura + iş emri belgeleri tek mailde (bkz. 2.9)
+- **Yedekleme** — `VACUUM INTO` tek dosya, atomik, WAL'i kapsar (bkz. 5h)
+- **Ofis stoğu** — ayrı liste, veriş + tekrar isteme aralığı, geri alınabilir
+- **Müşteri + Ürün Excel aktarım ekranları**
+- **Kurulumda bildirim/kısayol sorusu ÇIKMAZ** — kısayol doğrudan oluşur
+  (`createDesktopShortcut: true`)
+
+**Test: 1118 kontrol · 24/24 sunucu dosyası · 0 hata** (943 sunucu + 175 arayüz)
 
 ### ⬜ Bilinen açıklar / sıradakiler
 
 1. **Sunucuyu servis olarak çalıştır** — ofise kurmadan önce (NSSM veya Task
    Scheduler). Sunucu kapalıyken Electron siyah ekran verir.
 2. **`.exe` paketleme** — Windows Developer Mode açılmalı, ortam engeli.
-3. **Yedekleme butonu** — Ayarlar'a "şimdi yedek al", tarih listesi.
-4. **Erteleme raporu** — veri toplanıyor (`deferrals`), rapor ekranı eksik.
-5. **Fatura e-postası** — Gmail kurulumu (`tools-src/gmail-kurulum.md`) ile
-   yapılacak. PDF indirme her zaman çalışıyor, e-posta ek özellik.
-6. **Genel performans raporu** — Excel'de var, web'de yok.
-7. **Müşteri/Ürün Excel aktarım ekranları** — sunucu uçları hazır
-   (`/import/{customer,product}/*`), arayüz yok. `EmployeeImport.jsx`
-   kopyalanıp uyarlanabilir.
+3. **Erteleme raporu** — veri toplanıyor (`deferrals`), rapor ekranı eksik.
+4. **Genel performans raporu** — Excel'de var, web'de yok.
+5. **Kurulum Sihirbazı** — tanıdıklara kurarken `.env` değerlerini
+   programın içinden dolduran sihirbaz. ⛔ Amaç: kullanıcı Google Cloud
+   konsolunu bilmesin. (Satış öncesi en büyük sürtünme.)
+6. **Pazara açarken e-posta yolu** — kurulum sıfır olsun diye PDF + QR
+   ödeme seçeneği. Şu an OAuth gerekiyor; tek kullanıcı için sorun değil,
+   çok müşterili satışta sorun olur. **Kullanıcı kararı bekleniyor.**
+7. **Alacak takibi + vade hatırlatması** — kullanıcı "nakit akışı için"
+   istedi; faturası olan her sektöre uyar, yani **satılabilir**. E-posta
+   kurulumundan sonra mantıklı.
 
 ### 🚫 Yapılmayacaklar (bilinçli karar)
 

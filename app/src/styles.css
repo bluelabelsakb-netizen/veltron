@@ -623,6 +623,31 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow-lg);
   padding: 30px 28px;
 }
+
+/* ⛔ GİRİŞ EKRANI PENCERE ÇUBUĞU (3 Ekim 2026)
+ *
+ * Pencere çerçevesiz (`main.mjs` → frame: false). Başlık çubuğu
+ * `Layout.jsx` içindeydi, giriş ekranında olmadığı için kullanıcı
+ * giriş yapmadan pencereyi kapatamıyordu. Sunucu kapalı olduğunda
+ * giriş ekranı AÇILAN EKRAN olduğu için bu en kötü yerdeydi.
+ *
+ * ⛔ Boş alan sürüklenebilir olmalı: `.win-controls` `no-drag`
+ *   (styles.css:214), geri kalan çubuk `drag`. Düğmelerin tıklanması
+ *   çubuğu sürüklemez. */
+.auth-titlebar {
+  position: absolute; top: 0; left: 0; right: 0; height: 38px;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 0 4px;
+  -webkit-app-region: drag;
+  z-index: 5;
+}
+.auth-titlebar-name {
+  margin-right: auto; margin-left: 12px;
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  user-select: none; pointer-events: none;
+}
+/* ⛔ Kart başlık çubuğunun ALTINDA kalmalı, üstüne binmesin. */
+.auth-card { margin-top: 22px; }
 .auth-brand { display: flex; flex-direction: column; align-items: center; gap: 11px; margin-bottom: 24px; }
 /* Giriş ekranı logosu (2 Ekim 2026) — 46px, PNG
  * ⛔ Sadece GİRİŞ EKRANI değişti. Sol menüdeki 30px'lik .brand-mark
@@ -656,6 +681,10 @@ a:hover { text-decoration: underline; }
 .auth-foot { margin-top: 18px; text-align: center; font-size: 12px; color: var(--text-dim); }
 .auth-foot button { background: none; border: none; color: var(--primary); cursor: pointer; font: inherit; padding: 0; }
 .auth-foot button:hover { text-decoration: underline; }
+/* ⛔ Alt blok butonu (Destek). `display:block` + `margin:auto` ile KUTU
+ *    ortalanır; aksi halde `text-align:center` yalnızca kutu içindeki
+ *    metni ortalar, kutuyu kaydırmaz (ölçülen kayma: 93px). */
+.auth-foot-block { display: block; margin: 9px auto 0; }
 
 .alert {
   display: flex; align-items: flex-start; gap: 9px;

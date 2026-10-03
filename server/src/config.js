@@ -1,9 +1,33 @@
-import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const serverRoot = path.resolve(here, '..');
+
+/**
+ * ⛔⛔ .env KONUMU — ÇALIŞMA DİZİNİNE GÜVME
+ * ------------------------------------------
+ * `import 'dotenv/config'` `.env`'yi `process.cwd()`'den arar.
+ * Geliştirirken sunucuyu `server/` içinden başlatırsın, çalışır.
+ * Ama KURULU PROGRADA görev tanımında "Start In: N/A" olduğu için
+ * cwd `C:\Windows\System32` olur ve `.env` HİÇ OKUNMAZ.
+ *
+ * Belirti (3 Ekim 2026): kurulu programda `.env` doluydu ama
+ *   "E-posta gönderimi kapalı — Gonderici e-posta adresi tanimli degil"
+ * diyordu. Kaynak sunucuda aynı `.env` ile sorunsuz çalışıyordu.
+ * JWT_SECRET, ADMIN_PASSWORD, MAIL_* — hiçbiri yüklenmiyordu.
+ *
+ * Çözüm: `.env`'i modülün KENDİ konumundan yükle (cwd'den değil).
+ * İkinci `config()` çağrısı, geliştirme ortamında cwd'deki `.env`'i de
+ * okur; `dotenv` zaten var olan değişkenlerin üzerine yazmaz, dolayısıyla
+ * sunucu kökündeki `.env` her zaman kazanır.
+ */
+dotenv.config({ path: path.join(serverRoot, '.env') });
+dotenv.config();
+
+/** .env gerçekten okundu mu? Kullanıcı "ayarım var ama çalışmıyor" derse bak. */
+export const envDosyasi = path.join(serverRoot, '.env');
 
 function int(value, fallback) {
   const n = Number.parseInt(value ?? '', 10);

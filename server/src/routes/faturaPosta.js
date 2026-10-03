@@ -26,6 +26,7 @@ import { logActivity } from '../utils/activity.js';
 import { wrap, badRequest, notFound, HttpError } from '../utils/http.js';
 import { faturaHtml } from '../utils/faturaSablon.js';
 import { gonder, gonderimDurumu, gonderimKaydet, kalanKota, bugunGonderilen, GUNLUK_KOTA } from '../utils/eposta.js';
+import { ekYukleyici, yuklemeHatasi, ekleriGetir, ekleriSorgula, ekYukle, ekSil } from '../utils/faturaEk.js';
 
 const router = Router();
 
@@ -159,6 +160,13 @@ const gonderSchema = z.object({
   kime: z.string().email('Gecerli bir e-posta adresi girin').max(200),
   mesaj: z.string().max(4000).optional().default(''),
   eklePdf: z.boolean().optional().default(true),
+  // ⛔ Varsayılan: iş emrine bağlı belgeler de gitsin. Müşteri
+  //    "bu tutar nereden" diye sormasın.
+  ekIsEmBelgeleri: z.boolean().optional().default(true),
+  ekFaturaBelgeleri: z.boolean().optional().default(true),
+  // ⛔ Boş dizi = "belge seçmedim" anlamına gelmez, "hepsi gitsin" demektir.
+  //    Kullanıcı tek tek kapatmak isterse oyun bu alanı dolar.
+  ekIds: z.array(z.number().int().positive()).max(50).optional(),
 });
 
 router.post(
@@ -198,20 +206,46 @@ router.post(
       throw new HttpError(503, `Fatura PDF'i olusturulamadi, e-posta gonderilmedi: ${h.message}`);
     }
 
-    // 2) Gönder
+    // 2) Ekleri topla (fatura kâğıdı + fatura belgeleri + iş emri belgeleri)
+    const ekler = [];
+    if (body.eklePdf) {
+      ekler.push({ dosyaAdi: `Fatura-${fatura.number}.pdf`, tur: 'application/pdf', icerik: pdf });
+    }
+    const ekBilgi = ekleriSorgula({
+      invoiceId: id,
+      isEmriId: fatura.work_order_id,
+      faturaBelgeleri: !!body.ekFaturaBelgeleri,
+      isEmBelgeleri: !!body.ekIsEmBelgeleri,
+    });
+    // ⛔ ekIds verildiyse sadece o belgeler gider (kullanıcı tek tek kapattıysa)
+    const secili = body.ekIds?.length
+      ? ekBilgi.fatura.filter((f) => body.ekIds.includes(f.ekId))
+      : ekBilgi.fatura;
+    ekler.push(...secili, ...ekBilgi.isEmri);
+
+    // ⛔ Gmail'in ek sınırı: toplam 25 MB. Aşarsa kullanıcı bilgilendirilir,
+    //    sessizce kırpılmaz (kırpılan belge farkında olmaz).
+    const toplamBayt = ekler.reduce((t, e) => t + (e.icerik?.length || 0), 0);
+    if (toplamBayt > 22 * 1024 * 1024) {
+      throw new HttpError(
+        413,
+        `Ekler çok büyük (${Math.round(toplamBayt / 1024 / 1024)} MB). Gmail en fazla 25 MB kabul eder. Büyük dosyaları ayırıp tekrar deneyin.`
+      );
+    }
+
+    // 3) Gönder
     try {
       const sonuc = await gonder({
         kime: body.kime,
         konu,
         govde,
-        ekler: body.eklePdf
-          ? [{ dosyaAdi: `Fatura-${fatura.number}.pdf`, tur: 'application/pdf', icerik: pdf }]
-          : [],
+        ekler,
       });
 
       gonderimKaydet({
         faturaId: id, faturaNo: fatura.number, kime: body.kime, konu,
-        durum: 'sent', boyut: pdf.length, kullaniciId: req.user?.id, ekVar: body.eklePdf,
+        durum: 'sent', boyut: pdf.length, kullaniciId: req.user?.id,
+        ekVar: ekler.length > 0, ekSayisi: ekler.length,
       });
 
       logActivity({
@@ -226,6 +260,8 @@ router.post(
           konu,
           pdfBoyut: pdf.length,
           kalemSayisi: kalemler.length,
+          ekSayisi: ekler.length,
+          ekAdlari: ekler.map((e) => e.dosyaAdi),
         },
       });
     } catch (h) {
@@ -285,6 +321,77 @@ router.post(
     });
 
     res.json({ data: { gonderildi: true, kime, messageId: sonuc.messageId } });
+  })
+);
+
+
+// ---------------------------------------------------------------- ek belgeler
+/**
+ * Faturaya belge ekler.
+ * ⛔ Multer `diskStorage` kullanır: dosya UUID adıyla diske yazılır,
+ *    kullanıcı adı ASLA kullanılmaz (path traversal). İzin verilmeyen
+ *    tür ve çalıştırılabilir uzantı `fileFilter`'da elenir.
+ */
+router.post(
+  '/:id/ekler',
+  authenticate,
+  ekYukleyici.single('file'),
+  yuklemeHatasi,
+  wrap(async (req, res) => {
+    const id = Number(req.params.id);
+    if (!get('SELECT id FROM invoices WHERE id = ?', [id])) throw notFound('Fatura bulunamadi');
+
+    const kayit = ekYukle({
+      invoiceId: id,
+      dosya: req.file,
+      kind: String(req.body?.kind || 'belge').slice(0, 40),
+      note: req.body?.note ? String(req.body.note).slice(0, 300) : null,
+      kullaniciId: req.user?.id ?? null,
+    });
+
+    res.status(201).json({ data: kayit });
+  })
+);
+
+/** Fatura gonderim penceresinde gosterilecek ek listesi (sayfa yenilemeden). */
+router.get(
+  '/:id/ekler',
+  authenticate,
+  wrap((req, res) => {
+    const id = Number(req.params.id);
+    const fatura = get('SELECT id, work_order_id FROM invoices WHERE id = ?', [id]);
+    if (!fatura) throw notFound('Fatura bulunamadi');
+
+    const onizleme = ekleriGetir({
+      invoiceId: id,
+      isEmriId: fatura.work_order_id,
+    });
+    // ⛔ `relative_path` arayüze gönderilmez: sunucu içi yol bilgisi,
+    //    kullanıcının işine yaramaz. Gönderimde sunucu kendisi kullanır.
+    const temizle = (l) => l.map(({ relative_path, ...r }) => r);
+    res.json({
+      data: {
+        fatura: temizle(onizleme.fatura),
+        isEmri: onizleme.isEmri,
+        toplam: onizleme.toplam,
+      },
+    });
+  })
+);
+
+/**
+ * Belgeyi siler.
+ * ⛔ `/:id` ile karışmasın diye `/ekler/:ekId` — Express 5'te
+ *    `/:id/ekler` ve `/ekler/:ekId` çakışır.
+ */
+router.delete(
+  '/ekler/:ekId',
+  authenticate,
+  requireAdmin,
+  wrap((req, res) => {
+    const silindi = ekSil(Number(req.params.ekId));
+    if (!silindi) throw notFound('Belge bulunamadi');
+    res.json({ data: { silindi: true } });
   })
 );
 

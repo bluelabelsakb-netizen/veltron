@@ -111,6 +111,8 @@ const DOSYALAR = [
   'taxes.test.mjs',
   'remember.test.mjs',
   'faturaPosta.test.mjs',
+  'faturaEkleri.test.mjs',
+  'envKonumu.test.mjs',
   'hataGunlugu.test.mjs',
   'paketlenebilirlik.test.mjs',
   'aktarmaEkran.test.mjs',

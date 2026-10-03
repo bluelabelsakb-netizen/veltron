@@ -65,6 +65,12 @@ export function migrate() {
   ensureColumn('work_orders', 'invoice_id', 'INTEGER');
   // Musteri portalı: kullanıcıyı müşteriye bağlayan sütun.
   ensureColumn('users', 'customer_id', 'INTEGER REFERENCES customers(id) ON DELETE SET NULL');
+  // ⛔ Fatura eki BLOB yerine DISKE yazilir (3 Ekim 2026). Ilk denemede
+  //    `data BLOB` ile kurulmus tablolarda `stored_name`/`relative_path`
+  //    yoktu ve INSERT patliyordu: "no such column: stored_name".
+  //    `CREATE TABLE IF NOT EXISTS` calan tabloyu DEGISTIRMEZ (bkz. AGENTS.md).
+  ensureColumn('invoice_attachments', 'stored_name', "TEXT NOT NULL DEFAULT ''");
+  ensureColumn('invoice_attachments', 'relative_path', "TEXT NOT NULL DEFAULT ''");
   // Jeton iptali (parola degisince eski oturumlar kapansin).
   ensureColumn('users', 'token_version', 'INTEGER NOT NULL DEFAULT 1');
   // Fatura <-> is emri baglantisi (otomatik taslak olusturma).

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Server, LogIn, AlertCircle, Eye, EyeOff, RefreshCw, KeyRound, MonitorSmartphone } from 'lucide-react';
+import { Server, LogIn, AlertCircle, Eye, EyeOff, RefreshCw, KeyRound, MonitorSmartphone, LifeBuoy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { PasswordResetModal } from './PasswordResetModal.jsx';
 import { Modal } from '../components/Modal.jsx';
 import { DestekOzeti } from '../components/DestekOzeti.jsx';
+import { WindowControls } from '../components/WindowControls.jsx';
 
 /**
  * Giris ekrani. Sunucu kapaliysa once adres sorulur.
@@ -78,6 +79,14 @@ export function Login({ serverDown = false }) {
 
   return (
     <div className="auth-screen">
+      {/* ⛔ PENCERE ÇERÇEVESİZ (`main.mjs` → frame: false). Bu çubuk olmadan
+          giriş ekranında küçült/büyüt/kapat düğmeleri hiç görünmüyordu;
+          kullanıcı Alt+F4 dışında pencereyi kapatamıyordu. */}
+      <div className="auth-titlebar">
+        <span className="auth-titlebar-name">Veltron</span>
+        <WindowControls />
+      </div>
+
       <div className="auth-card">
         <div className="auth-brand">
           <img className="brand-mark" src="./veltron-ikon.png" alt="" />
@@ -251,17 +260,23 @@ export function Login({ serverDown = false }) {
                 Sunucu adresini değiştir
               </button>
 
-              {/* Giris yapilamiyorsa buradan da bilgi alinabilsin (2 Ekim 2026) */}
+              {/* Giris yapilamiyorsa buradan da bilgi alinabilsin (2 Ekim 2026)
+               *
+               * ⛔ HİZALAMA: `display: block` buton kutusunu sola yapıştırıyor
+               * ve `text-align: center` onu taşıyamıyor. Ölçüldü: butonun
+               * merkezi kartın merkezinden 93px SOLDANDAYDI. `margin: auto`
+               * ile kutu ortalanır, kutu içindeki metin zaten ortalanır. */}
               <button
                 type="button"
+                className="auth-foot-block"
                 onClick={() => {
                   setError('');
                   setSifremiUnuttum(false);
                   setDestekAcik(true);
                 }}
-                style={{ marginTop: 8, display: 'block' }}
               >
-                Giriş yapamıyorum — destek
+                <LifeBuoy size={12} style={{ verticalAlign: '-1px', marginRight: 5 }} />
+                Destek
               </button>
             </div>
           </form>

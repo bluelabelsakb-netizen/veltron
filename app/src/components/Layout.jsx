@@ -3,13 +3,14 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, FolderKanban, Users, Building2, FileText,
   Receipt, Package, ArrowLeftRight, Shield, History, Settings, LogOut,
-  Minus, Square, X, ChevronDown, KeyRound, User as UserIcon, Wifi, WifiOff,
+  ChevronDown, KeyRound, User as UserIcon, Wifi, WifiOff,
   Building, ClipboardList, HardHat, Wallet, TrendingUp, Award, FileSpreadsheet, Upload, CircleDollarSign, Calculator,
   UserPlus, LifeBuoy, HandCoins,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { initials } from '../lib/api.js';
 import { Modal } from './Modal.jsx';
+import { WindowControls } from './WindowControls.jsx';
 import { FormField, useFormState } from './Form.jsx';
 import { api } from '../lib/api.js';
 import { useToast } from './Toast.jsx';
@@ -112,7 +113,6 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [online, setOnline] = useState(true);
-  const [maximized, setMaximized] = useState(false);
 
   // Kenar cubugu sayaclarini getir.
   // NOT: Her sayfa gecisinde degil, yalnizca acilista ve 5 dakikada bir
@@ -362,21 +362,7 @@ export function Layout() {
         </div>
 
         {bridge ? (
-          <div className="win-controls">
-            <button className="win-btn" onClick={() => bridge.window.minimize()} title="Küçült">
-              <Minus size={14} />
-            </button>
-            <button
-              className="win-btn"
-              onClick={async () => setMaximized(await bridge.window.maximize())}
-              title={maximized ? 'Geri al' : 'Büyüt'}
-            >
-              <Square size={12} />
-            </button>
-            <button className="win-btn close" onClick={() => bridge.window.close()} title="Kapat">
-              <X size={15} />
-            </button>
-          </div>
+          <WindowControls />
         ) : null}
       </header>
 
